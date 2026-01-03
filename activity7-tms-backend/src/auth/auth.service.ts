@@ -1,5 +1,6 @@
 import {Injectable, UnauthorizedException} from '@nestjs/common';
 import {JwtService} from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import {UsersService} from '../users/users.service';
 import {LoginDto} from './dto/login.dto';
 
@@ -31,7 +32,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    if (user.password !== password) {
+    const passwordMatches = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatches) {
       throw new UnauthorizedException('Invalid email or password');
     }
 

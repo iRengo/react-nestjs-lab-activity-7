@@ -2,10 +2,11 @@ import React from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import './App.css';
 import MainLayout from './components/layout/MainLayout';
-import Dashboard from './pages/Dashboard';
-import Projects from './pages/Projects';
-import Tasks from './pages/Tasks';
-import Users from './pages/Users';
+import Dashboard from './pages/adminSide/Dashboard';
+import Projects from './pages/adminSide/Projects';
+import Settings from './pages/adminSide/Settings';
+import Tasks from './pages/adminSide/Tasks';
+import Users from './pages/adminSide/Users';
 import Login from './pages/auth/login';
 import Signup from './pages/auth/signup';
 import ForgotPassword from './pages/auth/forgotpassword';
@@ -72,6 +73,7 @@ function App() {
           <Route path="projects" element={<Projects />} />
           <Route path="tasks" element={<Tasks />} />
           <Route path="users" element={<Users />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

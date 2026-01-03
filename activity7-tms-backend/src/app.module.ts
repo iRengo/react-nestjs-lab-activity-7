@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AccountModule } from './account/account.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { MembersModule } from './members/members.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -17,9 +19,11 @@ import { UsersModule } from './users/users.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE ?? process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: (process.env.DB_SYNC ?? 'true').toLowerCase() === 'true',
+      synchronize: (process.env.DB_SYNC ?? 'false').toLowerCase() === 'true',
     }),
     UsersModule,
+    MembersModule,
+    AccountModule,
     AuthModule,
   ],
   controllers: [AppController],

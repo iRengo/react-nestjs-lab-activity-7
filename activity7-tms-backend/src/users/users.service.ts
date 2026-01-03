@@ -1,6 +1,7 @@
 import {ConflictException, Injectable, NotFoundException} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import {CreateUserDto} from './dto/create-user.dto';
 import {UpdateUserDto} from './dto/update-user.dto';
 import {User} from './entities/user.entity';
@@ -14,8 +15,15 @@ export class UsersService {
 
 	async create(createUserDto: CreateUserDto): Promise<User> {
 		await this.ensureEmailIsUnique(createUserDto.email);
+		await this.ensureUserIdIsUnique(createUserDto.userId);
 
-		const user = this.usersRepository.create(createUserDto);
+		const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+		const user = this.usersRepository.create({
+			...createUserDto,
+			role: createUserDto.role ?? 'user',
+			status: createUserDto.status ?? 'active',
+			password: hashedPassword,
+		});
 		return this.usersRepository.save(user);
 	}
 
@@ -40,9 +48,15 @@ export class UsersService {
 			await this.ensureEmailIsUnique(updateUserDto.email);
 		}
 
-		const mergedUser = this.usersRepository.merge(user, {
+		const payload: UpdateUserDto = {
 			...updateUserDto,
-		});
+		};
+
+		if (payload.password) {
+			payload.password = await bcrypt.hash(payload.password, 10);
+		}
+
+		const mergedUser = this.usersRepository.merge(user, payload);
 		return this.usersRepository.save(mergedUser);
 	}
 
@@ -60,6 +74,14 @@ export class UsersService {
 
 		if (existingUser) {
 			throw new ConflictException('Email address is already in use');
+		}
+	}
+
+	private async ensureUserIdIsUnique(userId: number): Promise<void> {
+		const existingUser = await this.usersRepository.findOne({where: {userId}});
+
+		if (existingUser) {
+			throw new ConflictException('User ID is already registered');
 		}
 	}
 

@@ -1,11 +1,13 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FiLogOut, FiSettings } from 'react-icons/fi';
 
 const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
+  const [isProfilePopoverOpen, setIsProfilePopoverOpen] = useState(false);
 
   const syncUserInfo = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -37,6 +39,10 @@ const Header = () => {
       .join('') || 'U';
   }, [userName]);
 
+  const handleSettingsClick = useCallback(() => {
+    navigate('/settings');
+  }, [navigate]);
+
   const clearSession = useCallback(() => {
     if (typeof window === 'undefined') {
       return;
@@ -47,7 +53,7 @@ const Header = () => {
     localStorage.removeItem('userId');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
-    navigate('/login', {replace: true});
+    navigate('/login', { replace: true });
   }, [navigate]);
 
   const handleConfirmLogout = useCallback(() => {
@@ -57,7 +63,7 @@ const Header = () => {
 
   const handleCancelLogout = useCallback(() => {
     setIsConfirmingLogout(false);
-  }, [navigate]);
+  }, []);
 
   const handleLogoutClick = useCallback(() => {
     setIsConfirmingLogout(true);
@@ -67,28 +73,64 @@ const Header = () => {
     <header className="flex items-center justify-between bg-white px-6 py-4 shadow-sm">
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 font-semibold text-white">
-          T
+          TR
         </div>
         <div>
-          <p className="text-sm text-slate-500">Task Management</p>
+          <p className="text-xs text-slate-500">Task Management</p>
           <h1 className="text-lg font-semibold text-slate-900">Team Workspace</h1>
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <div className="text-right">
-          <p className="text-sm font-medium text-slate-900">{userName || 'Unknown User'}</p>
-          <p className="text-xs text-slate-500">{userRole || 'Role unavailable'}</p>
-        </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-600">
-          {initials}
+
+        <button
+          type="button"
+          onClick={handleSettingsClick}
+          className="rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200 hover:text-slate-800"
+          aria-label="Open settings"
+        >
+          <FiSettings className="h-5 w-5" />
+        </button>
+        <div
+          className="relative"
+          onMouseEnter={() => setIsProfilePopoverOpen(true)}
+          onMouseLeave={() => setIsProfilePopoverOpen(false)}
+          onClick={() => setIsProfilePopoverOpen((prev) => !prev)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              setIsProfilePopoverOpen((prev) => !prev);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-haspopup="dialog"
+          aria-expanded={isProfilePopoverOpen}
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-600">
+            {initials}
+          </div>
+          {isProfilePopoverOpen && (
+            <div className="absolute left-1/2 top-12 z-20 w-max max-w-[min(16rem,calc(100vw-3rem))] -translate-x-1/2 px-2 sm:px-0">
+              <div className="relative rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-lg">
+                <div className="absolute -top-2 left-1/2 hidden h-3 w-3 -translate-x-1/2 rotate-45 border border-slate-200 bg-white sm:block" />
+                <div className="absolute -top-2 left-6 block h-3 w-3 rotate-45 border border-slate-200 bg-white sm:hidden" />
+                <p className="text-xs font-semibold uppercase text-slate-400">me:</p>
+                <p className="text-sm font-medium text-slate-900 break-words">
+                  {userName || 'Unknown User'}
+                </p>
+                <p className="text-xs text-slate-500 break-words">{userRole || 'Role unavailable'}</p>
+              </div>
+            </div>
+          )}
         </div>
         <div className="relative">
           <button
             type="button"
             onClick={handleLogoutClick}
-            className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+            className="rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200 hover:text-slate-800"
+            aria-label="Log out"
           >
-            Logout
+            <FiLogOut className="h-5 w-5" />
           </button>
           {isConfirmingLogout && (
             <div className="absolute right-0 top-12 w-56 rounded-lg border border-slate-200 bg-white p-4 shadow-lg">
@@ -112,6 +154,8 @@ const Header = () => {
             </div>
           )}
         </div>
+
+
       </div>
     </header>
   );

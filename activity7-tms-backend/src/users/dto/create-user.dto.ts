@@ -1,6 +1,12 @@
-import {IsEmail, IsNotEmpty, IsString} from 'class-validator';
+import {Type} from 'class-transformer';
+import {IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, Matches} from 'class-validator';
 
 export class CreateUserDto {
+  @Type(() => Number)
+  @IsInt()
+  @IsNotEmpty()
+  userId: number;
+
   @IsString()
   @IsNotEmpty()
   firstName: string;
@@ -15,13 +21,15 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
+    { message: 'Password must be at least 8 characters and include uppercase, lowercase, and a digit.' })
   password: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  role: string;
+  role?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  status: string;
+  status?: string;
 }
