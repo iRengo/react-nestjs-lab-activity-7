@@ -49,9 +49,13 @@ const Login = () => {
         localStorage.setItem("accessToken", data.accessToken);
       }
 
+      let resolvedDestination = '/userSide/dashboard';
+
       if (data?.user) {
         if (data.user.role) {
           localStorage.setItem("userRole", data.user.role);
+          const normalizedRole = typeof data.user.role === 'string' ? data.user.role.toLowerCase() : '';
+          resolvedDestination = normalizedRole === 'admin' ? '/adminSide/dashboard' : '/userSide/dashboard';
         }
         if (data.user.userId) {
           localStorage.setItem("userId", String(data.user.userId));
@@ -67,7 +71,7 @@ const Login = () => {
         }
       }
 
-      navigate("/dashboard", { replace: true });
+      navigate(resolvedDestination, { replace: true });
     } catch (error) {
       setErrorMessage(error.message ?? "Unable to sign in. Please try again later.");
     } finally {

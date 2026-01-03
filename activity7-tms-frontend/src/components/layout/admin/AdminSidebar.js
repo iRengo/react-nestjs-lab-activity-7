@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import logo from '../../assets/icon/actlogo.png';
+import logo from '../../../assets/icon/actlogo.png';
 
 const navItems = [
   { label: 'Dashboard', to: '/adminSide/dashboard' },

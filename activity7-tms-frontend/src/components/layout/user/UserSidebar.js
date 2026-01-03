@@ -1,16 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import logo from '../../assets/icon/actlogo.png';
+import logo from '../../../assets/icon/actlogo.png';
 
 const navItems = [
-  { label: 'Dashboard', to: '/adminSide/dashboard' },
-  { label: 'Projects', to: '/adminSide/projects' },
-  { label: 'Tasks', to: '/adminSide/tasks' },
-  { label: 'Users', to: '/adminSide/users' },
-  { label: 'Settings', to: '/adminSide/settings' },
+  { label: 'Dashboard', to: '/userSide/dashboard' },
+  { label: 'Projects', to: '/userSide/projects' },
+  { label: 'Tasks', to: '/userSide/tasks' },
+  { label: 'Settings', to: '/userSide/settings' },
 ];
 
-const Sidebar = () => {
+const UserSidebar = () => {
   return (
     <aside className="flex h-screen w-64 flex-col bg-white px-4 py-6 shadow-sm">
       <div className="mb-8 flex items-center gap-3 px-2">
@@ -45,4 +44,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default UserSidebar;
