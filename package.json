@@ -1,0 +1,13 @@
+{
+  "name": "activity7-monorepo",
+  "private": true,
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "npm run start:dev --prefix activity7-tms-backend",
+    "start:frontend": "cross-env PORT=3001 npm start --prefix activity7-tms-frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
+  }
+}
