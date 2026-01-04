@@ -5,7 +5,7 @@ import Sidebar from './AdminSidebar';
 
 const AdminLayout = () => {
   return (
-    <div className="flex min-h-screen bg-[#FCFCFC]">
+    <div className="flex min-h-screen bg-slate-50 transition-colors dark:bg-slate-950">
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <AdminHeader />

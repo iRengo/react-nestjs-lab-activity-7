@@ -114,8 +114,8 @@ const Settings = () => {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Account Settings</h1>
-        <p className="text-sm text-slate-500">Manage your personal details and credentials.</p>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Account Settings</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-300">Manage your personal details and credentials.</p>
       </div>
 
       <FeedbackAlert feedback={feedback} />
@@ -128,14 +128,14 @@ const Settings = () => {
           <button
             type="button"
             onClick={loadProfile}
-            className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+            className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
             disabled={isLoading || isSaving}
           >
             Reset
           </button>
           <button
             type="submit"
-            className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+            className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-indigo-300 dark:hover:bg-indigo-500"
             disabled={isLoading || isSaving}
           >
             {isSaving ? 'Saving...' : 'Save Changes'}

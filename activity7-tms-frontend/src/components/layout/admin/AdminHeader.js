@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiLogOut, FiSettings } from 'react-icons/fi';
+import { FiLogOut } from 'react-icons/fi';
+import ThemeToggle from '../../common/ThemeToggle';
 
 const AdminHeader = () => {
   const navigate = useNavigate();
@@ -39,10 +40,6 @@ const AdminHeader = () => {
       .join('') || 'U';
   }, [userName]);
 
-  const handleSettingsClick = useCallback(() => {
-    navigate('/adminSide/settings');
-  }, [navigate]);
-
   const clearSession = useCallback(() => {
     if (typeof window === 'undefined') {
       return;
@@ -70,26 +67,18 @@ const AdminHeader = () => {
   }, []);
 
   return (
-    <header className="flex items-center justify-between bg-white px-6 py-4 shadow-sm">
+    <header className="flex items-center justify-between bg-white px-6 py-4 shadow-sm dark:bg-slate-900">
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 font-semibold text-white">
           TR
         </div>
         <div>
-          <p className="text-xs text-slate-500">Task Management</p>
-          <h1 className="text-lg font-semibold text-slate-900">Team Workspace</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-300">Task Management</p>
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">Team Workspace</h1>
         </div>
       </div>
       <div className="flex items-center gap-4">
-
-        <button
-          type="button"
-          onClick={handleSettingsClick}
-          className="rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200 hover:text-slate-800"
-          aria-label="Open settings"
-        >
-          <FiSettings className="h-5 w-5" />
-        </button>
+        <ThemeToggle />
         <div
           className="relative"
           onMouseEnter={() => setIsProfilePopoverOpen(true)}
@@ -111,14 +100,14 @@ const AdminHeader = () => {
           </div>
           {isProfilePopoverOpen && (
             <div className="absolute left-1/2 top-12 z-20 w-max max-w-[min(16rem,calc(100vw-3rem))] -translate-x-1/2 px-2 sm:px-0">
-              <div className="relative rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-lg">
-                <div className="absolute -top-2 left-1/2 hidden h-3 w-3 -translate-x-1/2 rotate-45 border border-slate-200 bg-white sm:block" />
-                <div className="absolute -top-2 left-6 block h-3 w-3 rotate-45 border border-slate-200 bg-white sm:hidden" />
-                <p className="text-xs font-semibold uppercase text-slate-400">me:</p>
-                <p className="text-sm font-medium text-slate-900 break-words">
+              <div className="relative rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                <div className="absolute -top-2 left-1/2 hidden h-3 w-3 -translate-x-1/2 rotate-45 border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 sm:block" />
+                <div className="absolute -top-2 left-6 block h-3 w-3 rotate-45 border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 sm:hidden" />
+                <p className="text-xs font-semibold uppercase text-slate-400 dark:text-slate-300">me:</p>
+                <p className="break-words text-sm font-medium text-slate-900 dark:text-white">
                   {userName || 'Unknown User'}
                 </p>
-                <p className="text-xs text-slate-500 break-words">{userRole || 'Role unavailable'}</p>
+                <p className="break-words text-xs text-slate-500 dark:text-slate-300">{userRole || 'Role unavailable'}</p>
               </div>
             </div>
           )}
@@ -127,19 +116,19 @@ const AdminHeader = () => {
           <button
             type="button"
             onClick={handleLogoutClick}
-            className="rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200 hover:text-slate-800"
+            className="rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200 hover:text-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-white"
             aria-label="Log out"
           >
             <FiLogOut className="h-5 w-5" />
           </button>
           {isConfirmingLogout && (
-            <div className="absolute right-0 top-12 w-56 rounded-lg border border-slate-200 bg-white p-4 shadow-lg">
-              <p className="mb-3 text-sm text-slate-700">Are you sure you want to log out?</p>
+            <div className="absolute right-0 top-12 w-56 rounded-lg border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+              <p className="mb-3 text-sm text-slate-700 dark:text-slate-200">Are you sure you want to log out?</p>
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={handleCancelLogout}
-                  className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                  className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </button>

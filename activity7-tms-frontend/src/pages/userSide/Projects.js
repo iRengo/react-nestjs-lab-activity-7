@@ -15,21 +15,21 @@ const Projects = () => {
         subtitle="View the initiatives you are contributing to."
       />
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-700">
+          <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">Project</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">Role</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-600">Progress</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Project</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Role</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Progress</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {mockProjects.map((project) => (
-              <tr key={project.id}>
-                <td className="px-4 py-3 font-medium text-slate-900">{project.name}</td>
-                <td className="px-4 py-3 text-slate-600">{project.role}</td>
-                <td className="px-4 py-3 text-slate-600">{project.progress}</td>
+              <tr key={project.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{project.name}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{project.role}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{project.progress}</td>
               </tr>
             ))}
           </tbody>

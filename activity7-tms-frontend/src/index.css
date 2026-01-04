@@ -11,10 +11,26 @@ body {
     'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fcfcfc;
+  background-color: #f8fafc;
+  color: #0f172a;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+body[data-theme='dark'] {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark ::selection {
+  background-color: rgba(129, 140, 248, 0.4);
+  color: #f8fafc;
 }

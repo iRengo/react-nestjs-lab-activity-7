@@ -1,6 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import logo from '../../assets/icon/actlogo.png';
+import darkLogo from '../../assets/icon/actlogo-dark.png';
+import { useTheme } from '../../hooks/useTheme';
 
 const navItems = [
   { label: 'Dashboard', to: '/adminSide/dashboard' },
@@ -11,10 +13,13 @@ const navItems = [
 ];
 
 const Sidebar = () => {
+  const { theme } = useTheme();
+  const logoSrc = theme === 'dark' ? darkLogo : logo;
+
   return (
     <aside className="flex h-screen w-64 flex-col bg-white px-4 py-6 shadow-sm">
       <div className="mb-8 flex items-center gap-3 px-2">
-        <img src={logo} alt="TaskRush logo" className="h-10 w-10 rounded-lg object-contain" />
+        <img src={logoSrc} alt="TaskRush logo" className="h-10 w-10 rounded-lg object-contain transition-all" />
         <div>
           <p className="text-2xl font-bold text-slate-900">
             Task<span className="ml-0.5 rounded-md font-bold text-indigo-600">Rush</span>
