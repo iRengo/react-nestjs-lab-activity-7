@@ -1,8 +1,29 @@
-import {BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards} from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import {Request} from 'express';
 import {AuthGuard} from '../auth/auth.guard';
 import {CreateTaskDto} from './dto/create-task.dto';
 import {UpdateTaskDto} from './dto/update-task.dto';
 import {TasksService} from './tasks.service';
+
+interface RequestWithUser extends Request {
+  user?: {
+    userId: number;
+  };
+}
 
 @Controller('tasks')
 @UseGuards(AuthGuard)
@@ -27,6 +48,17 @@ export class TasksController {
     }
 
     return this.tasksService.findAll(parsed);
+  }
+
+  @Get('assigned/me')
+  findAssignedToCurrentUser(@Req() request: RequestWithUser) {
+    const userId = request.user?.userId;
+
+    if (typeof userId !== 'number') {
+      throw new UnauthorizedException('Authenticated user context missing');
+    }
+
+    return this.tasksService.findAssignedToUser(userId);
   }
 
   @Get(':id')

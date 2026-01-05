@@ -32,6 +32,17 @@ export class ProjectsController {
     return this.projectsService.findAll();
   }
 
+  @Get('assigned/me')
+  findAssignedForCurrentUser(@Req() request: RequestWithUser) {
+    const userId = request.user?.userId;
+
+    if (typeof userId !== 'number') {
+      throw new UnauthorizedException('Authenticated user context missing');
+    }
+
+    return this.projectsService.findAssignedToUser(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) projectId: number) {
     return this.projectsService.findOne(projectId);

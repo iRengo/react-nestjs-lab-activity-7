@@ -1,1 +1,1 @@
-export {getTasks, createTask, updateTask, deleteTask} from './api/tasksApi';
+export {getTasks, createTask, updateTask, deleteTask, getAssignedTasks} from './api/tasksApi';

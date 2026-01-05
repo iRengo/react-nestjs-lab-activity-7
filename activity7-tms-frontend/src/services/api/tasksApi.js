@@ -72,3 +72,17 @@ export const deleteTask = async (taskId) => {
 
   return response.json().catch(() => ({deleted: true}));
 };
+
+export const getAssignedTasks = async () => {
+  const response = await fetch(`${API_BASE_URL}/tasks/assigned/me`, {
+    method: 'GET',
+    headers: withAuth(),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+};

@@ -1,1 +1,7 @@
-export {getAllProjects, createProject, deleteProject, updateProject} from './api/projectsApi';
+export {
+	getAllProjects,
+	createProject,
+	deleteProject,
+	updateProject,
+	getAssignedProjects,
+} from './api/projectsApi';

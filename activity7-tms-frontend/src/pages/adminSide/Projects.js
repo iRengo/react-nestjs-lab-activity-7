@@ -23,6 +23,11 @@ const statusLabels = {
 	completed: 'Completed',
 };
 
+const isTaskStatusCompleted = (status) => {
+	const normalized = (status ?? '').toString().toLowerCase();
+	return ['completed', 'complete', 'done'].includes(normalized);
+};
+
 const formatDate = (value) => {
 	if (!value) {
 		return '—';
@@ -49,6 +54,7 @@ const Projects = () => {
 	const [isFetching, setIsFetching] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [deletingId, setDeletingId] = useState(null);
+	const [markingProjectId, setMarkingProjectId] = useState(null);
 	const [formState, setFormState] = useState(() => ({...defaultFormState}));
 	const [errorMessage, setErrorMessage] = useState('');
 	const [successMessage, setSuccessMessage] = useState('');
@@ -155,6 +161,8 @@ const Projects = () => {
 				raw: Math.round(rawPercentage),
 				step: nearestStep,
 				colorClass: colorByStep[nearestStep] ?? colorByStep[0],
+				total: stats.total,
+				completed: stats.completed,
 			});
 		});
 
@@ -266,6 +274,41 @@ const Projects = () => {
 		}
 	};
 
+	const handleMarkProjectCompleted = async (project) => {
+		if (markingProjectId) {
+			return;
+		}
+
+		const normalizedStatus = (project.status ?? '').toString().toLowerCase();
+		if (normalizedStatus === 'completed') {
+			setSuccessMessage('');
+			setErrorMessage('This project is already marked as completed.');
+			return;
+		}
+
+		const relatedTasks = tasks.filter((task) => task.projectId === project.projectId);
+		const hasIncompleteTask = relatedTasks.some((task) => !isTaskStatusCompleted(task.status));
+
+		if (hasIncompleteTask) {
+			setSuccessMessage('');
+			setErrorMessage('Complete all tasks for this project before marking it as completed.');
+			return;
+		}
+
+		setMarkingProjectId(project.projectId);
+		setErrorMessage('');
+
+		try {
+			await updateProject(project.projectId, {status: 'completed'});
+			setSuccessMessage('Project marked as completed.');
+			await loadProjects();
+		} catch (error) {
+			setErrorMessage(error.message ?? 'Unable to mark the project as completed.');
+		} finally {
+			setMarkingProjectId(null);
+		}
+	};
+
 	const handleViewProject = (project) => {
 		setSelectedProject(project);
 	};
@@ -322,6 +365,8 @@ const Projects = () => {
 				onViewProject={handleViewProject}
 				onNavigateToTasks={handleNavigateToTasks}
 				onDeleteProject={handleDeleteProject}
+				onMarkProjectComplete={handleMarkProjectCompleted}
+				markingProjectId={markingProjectId}
 			/>
 
 			<CreateProjectModal

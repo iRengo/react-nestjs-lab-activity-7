@@ -15,6 +15,8 @@ const ProjectsTable = ({
   onViewProject,
   onNavigateToTasks,
   onDeleteProject,
+  onMarkProjectComplete,
+  markingProjectId,
 }) => {
   const currentPage = Math.min(page, totalPages);
   const maxPages = Math.max(totalPages, 1);
@@ -66,6 +68,14 @@ const ProjectsTable = ({
               <td className="px-6 py-4">{resolveCreatorName(project)}</td>
               <td className="px-6 py-4">
                 <div className="flex justify-end gap-2">
+                  {onMarkProjectComplete ? (
+                    <ProjectCompleteButton
+                      project={project}
+                      projectProgress={projectProgress}
+                      onMarkComplete={onMarkProjectComplete}
+                      markingProjectId={markingProjectId}
+                    />
+                  ) : null}
                   {onEditProject ? (
                     <button
                       type="button"
@@ -146,6 +156,34 @@ const ProjectProgressBar = ({projectId, projectProgress}) => {
         />
       </div>
     </div>
+  );
+};
+
+const ProjectCompleteButton = ({project, projectProgress, onMarkComplete, markingProjectId}) => {
+  const info = projectProgress?.get(project.projectId);
+  const totalTasks = info?.total ?? 0;
+  const completedTasks = info?.completed ?? 0;
+  const hasIncompleteTasks = totalTasks > 0 && completedTasks < totalTasks;
+  const normalizedStatus = (project.status ?? '').toString().toLowerCase();
+  const isAlreadyCompleted = normalizedStatus === 'completed';
+  const isMarking = markingProjectId === project.projectId;
+  const disabled = hasIncompleteTasks || isAlreadyCompleted || isMarking;
+  const title = hasIncompleteTasks
+    ? 'Complete all project tasks before marking as completed.'
+    : isAlreadyCompleted
+      ? 'This project is already completed.'
+      : undefined;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onMarkComplete(project)}
+      disabled={disabled}
+      title={title}
+      className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:border-emerald-400 dark:hover:bg-emerald-500/20"
+    >
+      {isMarking ? 'Marking…' : 'Mark completed'}
+    </button>
   );
 };
 

@@ -52,6 +52,14 @@ export class TasksService {
     return task;
   }
 
+  async findAssignedToUser(userId: number): Promise<Task[]> {
+    return this.tasksRepository.find({
+      where: {assignedTo: userId},
+      relations: ['project'],
+      order: {createdAt: 'DESC'},
+    });
+  }
+
   async update(taskId: number, updateTaskDto: UpdateTaskDto): Promise<Task> {
     const task = await this.tasksRepository.findOne({where: {taskId}, relations: ['project']});
 
