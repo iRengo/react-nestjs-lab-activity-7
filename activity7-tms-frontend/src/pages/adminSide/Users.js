@@ -3,6 +3,8 @@ import { FiFilter, FiSearch } from 'react-icons/fi';
 import PageHeader from '../../components/common/PageHeader';
 import { getAllUsers } from '../../services/api/usersApi';
 
+const ROWS_PER_PAGE = 6;
+
 const mapUserRecord = (user) => {
 	const firstName = user?.firstName ?? '';
 	const lastName = user?.lastName ?? '';
@@ -33,6 +35,7 @@ const Users = () => {
 	const [error, setError] = useState('');
 	const [searchTerm, setSearchTerm] = useState('');
 	const [roleFilter, setRoleFilter] = useState('all');
+	const [userPage, setUserPage] = useState(1);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -91,6 +94,26 @@ const Users = () => {
 			);
 		});
 	}, [preparedUsers, roleFilter, searchTerm]);
+
+	useEffect(() => {
+		setUserPage(1);
+	}, [searchTerm, roleFilter]);
+
+	const totalUserPages = useMemo(
+		() => Math.max(1, Math.ceil(filteredUsers.length / ROWS_PER_PAGE)),
+		[filteredUsers.length],
+	);
+
+	useEffect(() => {
+		if (userPage > totalUserPages) {
+			setUserPage(totalUserPages);
+		}
+	}, [userPage, totalUserPages]);
+
+	const paginatedUsers = useMemo(() => {
+		const start = (userPage - 1) * ROWS_PER_PAGE;
+		return filteredUsers.slice(start, start + ROWS_PER_PAGE);
+	}, [filteredUsers, userPage]);
 
 	return (
 		<section className="space-y-6">
@@ -158,7 +181,7 @@ const Users = () => {
 				</div>
 			) : (
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-					{filteredUsers.map((user) => (
+					{paginatedUsers.map((user) => (
 							<div
 								key={user.id}
 								className="group relative overflow-hidden rounded-xl bg-white p-5 shadow-sm transition hover:shadow-lg dark:bg-slate-900 dark:hover:shadow-slate-950"
@@ -197,6 +220,30 @@ const Users = () => {
 					))}
 				</div>
 			)}
+
+			{!isLoading ? (
+				<div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-medium text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+					<span>Page {userPage} of {totalUserPages}</span>
+					<div className="flex gap-2">
+						<button
+							type="button"
+							onClick={() => setUserPage((previous) => Math.max(previous - 1, 1))}
+							disabled={userPage <= 1}
+							className="rounded-md border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-300 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
+						>
+							Previous
+						</button>
+						<button
+							type="button"
+							onClick={() => setUserPage((previous) => Math.min(previous + 1, totalUserPages))}
+							disabled={userPage >= totalUserPages}
+							className="rounded-md border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-300 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
+						>
+							Next
+						</button>
+					</div>
+				</div>
+			) : null}
 		</section>
 	);
 };

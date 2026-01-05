@@ -121,25 +121,29 @@ const Settings = () => {
       <FeedbackAlert feedback={feedback} />
 
       <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-        <ProfileSection formData={formData} onChange={handleChange} isLoading={isLoading} />
-        <PasswordSection formData={formData} onChange={handleChange} />
+        <div className="max-h-[70vh]">
+          <div className="settings-scroll-area flex h-full flex-col space-y-6 overflow-y-auto overflow-x-hidden pr-1">
+            <ProfileSection formData={formData} onChange={handleChange} isLoading={isLoading} />
+            <PasswordSection formData={formData} onChange={handleChange} />
 
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={loadProfile}
-            className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
-            disabled={isLoading || isSaving}
-          >
-            Reset
-          </button>
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-indigo-300 dark:hover:bg-indigo-500"
-            disabled={isLoading || isSaving}
-          >
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={loadProfile}
+                className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                disabled={isLoading || isSaving}
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-indigo-300 dark:hover:bg-indigo-500"
+                disabled={isLoading || isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </section>

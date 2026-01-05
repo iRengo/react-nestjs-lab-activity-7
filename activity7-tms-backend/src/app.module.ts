@@ -6,6 +6,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { MembersModule } from './members/members.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -20,11 +22,14 @@ import { UsersModule } from './users/users.module';
       database: process.env.DB_DATABASE ?? process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: (process.env.DB_SYNC ?? 'false').toLowerCase() === 'true',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
     }),
     UsersModule,
     MembersModule,
     AccountModule,
     AuthModule,
+    ProjectsModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
