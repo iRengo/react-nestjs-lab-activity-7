@@ -9,10 +9,12 @@ This project is a task management system web application built as a full-stack l
 **Key Features**
 - User signup / login
 - Create and manage projects
-- Assign members and roles
+- Assign members 
 - Create / update / delete tasks
-- Project and task dashboards with filtering
+- Project and task modules with filtering
 - Role-based admin and user experiences
+- Light Theme & Dark Theme
+
 
 ## 1. Requirements
 - **Node.js:** v18+ (LTS recommended)
@@ -39,6 +41,7 @@ Configure the connection values in your `.env` (or TypeORM config) to match the 
 - `DB_NAME=tms_db`
 - `JWT_SECRET=your_jwt_secret`
 
+
 The REST API runs by default on **http://localhost:3000**.
 
 ## 3. Frontend Setup (React App)
@@ -59,28 +62,49 @@ If the file is missing, the frontend falls back to `http://localhost:3000`.
 	- `cd activity7-tms-frontend`
 	- `npm start`
 
-The React app starts on **http://localhost:3000** (or **http://localhost:3001** if 3000 is busy).
+The React app starts on **http://localhost:3001** (because the **http://localhost:3001** is used by backend).
 
 ## 4. Run Frontend & Backend Together
 Root-level helper scripts (package.json):
 
 ```
 {
-	"scripts": {
-		"start:frontend": "npm start --prefix activity7-tms-frontend",
-		"start:backend": "npm run start:dev --prefix activity7-tms-backend",
-		"dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
-	}
+	 "scripts": {
+        "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+        "start:backend": "npm run start:dev --prefix activity7-tms-backend",
+        "start:frontend": "cross-env PORT=3001 npm start --prefix activity7-tms-frontend"
+  }
 }
 ```
 
 **Steps**
 - Install root dependencies: `npm install`
-- Start both servers: `npm run dev`
+- Start both servers via root folder: ` npm start`
 - Backend: **http://localhost:3000**
 - Frontend: next free port (usually **http://localhost:3001**)
 
-## 5. How the App Works (High-Level Overview)
+## 5. Required Installation Commands
+
+**Frontend**
+- `npx create-react-app file-name`
+- `npx tailwind css init`
+- `npm install -D tailwindcss@3`
+- `npm install`
+- `npm install react-icons`
+- `npm install chart.js react-chartjs-2`
+
+**Backend**
+- `npx nest new folder-name`
+- `npm install`
+- `npm install @nestjs/typeorm mysql2`
+- `npm install @nestjs/config`
+- `npm install @nestjs/jwt passport-jwt passport bcrypt class-validator class-transformer`
+- `npm install nodemailer`
+
+**Root Folder**
+- `npm install` (installs concurrently and shared tooling)
+
+## 6. How the App Works (High-Level Overview)
 
 ### Backend (NestJS)
 - Exposes REST endpoints for:
@@ -90,8 +114,8 @@ Root-level helper scripts (package.json):
 	- **Members:** assign users to projects and roles
 	- **Tasks:** create, assign, update status, delete
 	- **Account:** manage profile settings
-- Uses TypeORM entities for User, Project, ProjectMember, Task, and related DTOs.
-- Implements role-based guards for admin vs regular user features.
+- Uses TypeORM entities for User, Project, Task, and related DTOs.
+- Implements role-based guards for admin vs user features.
 
 ### Frontend (React + Tailwind)
 - Single-page experience with dedicated admin and user dashboards.
