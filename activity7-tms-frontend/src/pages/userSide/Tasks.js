@@ -3,48 +3,18 @@ import PageHeader from '../../components/common/PageHeader';
 import useAssignedWork from '../../hooks/useAssignedWork';
 import {updateTask} from '../../services/taskService';
 import {getDateOrNull, normalizeStatus} from './utils/taskMetrics';
+import {formatStatusLabel, getPriorityBadgeClasses, getPriorityLabel, getStatusBadgeClasses} from '../../utils/badgeStyles';
 
-const STATUS_OPTIONS = [
-  {value: 'pending', label: 'Pending'},
+const STATUS_CHOICES = [
   {value: 'ongoing', label: 'Ongoing'},
   {value: 'completed', label: 'Completed'},
 ];
 
-const statusBadgeClasses = (status) => {
-  const normalized = normalizeStatus(status);
+const TASKS_PER_PAGE = 5;
 
-  if (['completed', 'complete', 'done', 'resolved'].includes(normalized)) {
-    return 'border border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/60 dark:bg-emerald-500/20 dark:text-emerald-200';
-  }
-
-  if (['in progress', 'ongoing', 'active', 'processing'].includes(normalized)) {
-    return 'border border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-500/60 dark:bg-indigo-500/20 dark:text-indigo-200';
-  }
-
-  if (['blocked', 'delayed', 'stuck', 'overdue'].includes(normalized)) {
-    return 'border border-rose-200 bg-rose-100 text-rose-700 dark:border-rose-500/60 dark:bg-rose-500/20 dark:text-rose-200';
-  }
-
-  return 'border border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800/60 dark:text-slate-200';
-};
-
-const priorityBadgeClasses = (priority) => {
-  const normalized = (priority ?? '').toString().toLowerCase();
-
-  if (normalized === 'high') {
-    return 'border border-rose-300 bg-rose-100 text-rose-700 dark:border-rose-500/60 dark:bg-rose-500/20 dark:text-rose-200';
-  }
-
-  if (normalized === 'medium') {
-    return 'border border-amber-300 bg-amber-100 text-amber-700 dark:border-amber-500/60 dark:bg-amber-500/20 dark:text-amber-200';
-  }
-
-  if (normalized === 'low') {
-    return 'border border-emerald-300 bg-emerald-100 text-emerald-700 dark:border-emerald-500/60 dark:bg-emerald-500/20 dark:text-emerald-200';
-  }
-
-  return 'border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800/60 dark:text-slate-200';
-};
+const STATUS_BUTTON_BASE_CLASSES = 'rounded-md px-3 py-1 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60';
+const STATUS_BUTTON_ACTIVE_CLASSES = 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-500';
+const STATUS_BUTTON_INACTIVE_CLASSES = 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-400 dark:hover:text-indigo-200';
 
 const mapStatusToOption = (status) => {
   const normalized = normalizeStatus(status);
@@ -57,18 +27,7 @@ const mapStatusToOption = (status) => {
     return 'ongoing';
   }
 
-  return 'pending';
-};
-
-const formatStatusLabel = (status) => {
-  const optionValue = mapStatusToOption(status);
-  const matched = STATUS_OPTIONS.find((option) => option.value === optionValue);
-  if (matched) {
-    return matched.label;
-  }
-
-  const raw = (status ?? '').toString();
-  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Pending';
+  return 'ongoing';
 };
 
 const formatDueDate = (value) => {
@@ -85,6 +44,24 @@ const formatDueDate = (value) => {
   });
 };
 
+const isTaskOverdue = (task) => {
+  const status = normalizeStatus(task.status);
+
+  if (status === 'completed') {
+    return false;
+  }
+
+  const due = getDateOrNull(task.dueDate);
+
+  if (!due) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return due.getTime() < today.getTime();
+};
+
 const Tasks = () => {
   const {tasks: assignedTasks, isLoading, error, reload} = useAssignedWork();
   const [statusSelections, setStatusSelections] = useState({});
@@ -92,6 +69,8 @@ const Tasks = () => {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [selectedTask, setSelectedTask] = useState(null);
+  const [taskPage, setTaskPage] = useState(1);
+  const taskCount = assignedTasks.length;
 
   useEffect(() => {
     if (!selectedTask) {
@@ -142,35 +121,66 @@ const Tasks = () => {
       });
   }, [assignedTasks]);
 
-  const handleStatusSelect = (taskId, value) => {
+  const totalTaskPages = useMemo(
+    () => Math.max(1, Math.ceil(orderedTasks.length / TASKS_PER_PAGE)),
+    [orderedTasks.length],
+  );
+
+  useEffect(() => {
+    setTaskPage(1);
+  }, [taskCount]);
+
+  useEffect(() => {
+    if (taskPage > totalTaskPages) {
+      setTaskPage(totalTaskPages);
+    }
+  }, [taskPage, totalTaskPages]);
+
+  const paginatedTasks = useMemo(() => {
+    const start = (taskPage - 1) * TASKS_PER_PAGE;
+    return orderedTasks.slice(start, start + TASKS_PER_PAGE);
+  }, [orderedTasks, taskPage]);
+
+  const handleStatusChange = async (task, nextStatus) => {
+    if (updatingTaskId === task.taskId) {
+      return;
+    }
+
+    const currentStatus = statusSelections[task.taskId] ?? mapStatusToOption(task.status);
+
+    if (currentStatus === nextStatus) {
+      return;
+    }
+
     setStatusSelections((previous) => ({
       ...previous,
-      [taskId]: value,
+      [task.taskId]: nextStatus,
     }));
-  };
-
-  const handleStatusUpdate = async (task) => {
-    const desiredStatus = statusSelections[task.taskId] ?? mapStatusToOption(task.status);
 
     setUpdatingTaskId(task.taskId);
     setActionError('');
     setActionSuccess('');
 
     try {
-      await updateTask(task.taskId, {status: desiredStatus});
-      const label = STATUS_OPTIONS.find((option) => option.value === desiredStatus)?.label ?? desiredStatus;
+      await updateTask(task.taskId, {status: nextStatus});
+      const label = STATUS_CHOICES.find((option) => option.value === nextStatus)?.label ?? nextStatus;
       setActionSuccess(`Task status updated to ${label}.`);
-      setStatusSelections((previous) => {
-        const next = {...previous};
-        delete next[task.taskId];
-        return next;
-      });
       if (selectedTask?.taskId === task.taskId) {
-        setSelectedTask((prev) => (prev ? {...prev, status: desiredStatus} : prev));
+        setSelectedTask((prev) => (prev ? {...prev, status: nextStatus} : prev));
       }
       await reload();
+      setStatusSelections((previous) => {
+        const nextSelections = {...previous};
+        delete nextSelections[task.taskId];
+        return nextSelections;
+      });
     } catch (updateError) {
       setActionError(updateError?.message ?? 'Unable to update task status.');
+      setStatusSelections((previous) => {
+        const nextSelections = {...previous};
+        delete nextSelections[task.taskId];
+        return nextSelections;
+      });
     } finally {
       setUpdatingTaskId(null);
     }
@@ -228,11 +238,15 @@ const Tasks = () => {
             No tasks assigned yet.
           </div>
         ) : (
-          orderedTasks.map((task) => {
+          paginatedTasks.map((task) => {
             const currentOption = mapStatusToOption(task.status);
             const statusValue = statusSelections[task.taskId] ?? currentOption;
             const statusLabel = formatStatusLabel(statusSelections[task.taskId] ?? task.status);
-            const priorityLabel = (task.priority ?? '').toString();
+            const statusClasses = getStatusBadgeClasses(statusValue);
+            const priorityLabel = getPriorityLabel(task.priority);
+
+            const priorityClasses = getPriorityBadgeClasses(task.priority);
+            const overdue = isTaskOverdue(task);
 
             return (
               <div
@@ -242,45 +256,40 @@ const Tasks = () => {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">{task.taskTitle ?? 'Untitled task'}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{formatDueDate(task.dueDate)}</p>
+                    <p className={`text-xs ${overdue ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>{formatDueDate(task.dueDate)}</p>
                     <p className="text-xs text-slate-400 dark:text-slate-500">{task.project?.projectName ?? 'No project linked'}</p>
                   </div>
                   <div className="flex flex-col gap-2 sm:items-end">
-                    <span className={`inline-flex min-w-[8rem] justify-center rounded-full px-3 py-1 text-xs font-medium capitalize ${statusBadgeClasses(statusValue)}`}>
+                    <span className={`inline-flex min-w-[8rem] justify-center rounded-full px-3 py-1 text-xs font-medium capitalize ${statusClasses}`}>
                       {statusLabel}
                     </span>
-                    {priorityLabel ? (
-                      <span className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${priorityBadgeClasses(priorityLabel)}`}>
-                        Priority: {priorityLabel}
-                      </span>
-                    ) : null}
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Update status</label>
-                    <div className="flex gap-2">
-                      <select
-                        value={statusValue}
-                        onChange={(event) => handleStatusSelect(task.taskId, event.target.value)}
-                        disabled={updatingTaskId === task.taskId}
-                        className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
-                      >
-                        {STATUS_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => handleStatusUpdate(task)}
-                        disabled={updatingTaskId === task.taskId}
-                        className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-indigo-500"
-                      >
-                        {updatingTaskId === task.taskId ? 'Saving…' : 'Update'}
-                      </button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {STATUS_CHOICES.map((option) => {
+                        const isActive = statusValue === option.value;
+                        const isSaving = updatingTaskId === task.taskId && statusSelections[task.taskId] === option.value;
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => handleStatusChange(task, option.value)}
+                            disabled={updatingTaskId === task.taskId}
+                            className={`${STATUS_BUTTON_BASE_CLASSES} ${isActive ? STATUS_BUTTON_ACTIVE_CLASSES : STATUS_BUTTON_INACTIVE_CLASSES}`}
+                          >
+                            {isSaving ? 'Updating…' : option.label}
+                          </button>
+                        );
+                      })}
                     </div>
+                    {priorityLabel ? (
+                      <span className={`inline-flex items-center justify-center rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${priorityClasses}`}>
+                        Priority: {priorityLabel}
+                      </span>
+                    ) : null}
                   </div>
                   <button
                     type="button"
@@ -296,13 +305,36 @@ const Tasks = () => {
         )}
       </div>
 
+      {!isLoading && orderedTasks.length > 0 ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-medium text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+          <span>Page {taskPage} of {totalTaskPages}</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setTaskPage((previous) => Math.max(previous - 1, 1))}
+              disabled={taskPage <= 1}
+              className="rounded-md border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-300 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setTaskPage((previous) => Math.min(previous + 1, totalTaskPages))}
+              disabled={taskPage >= totalTaskPages}
+              className="rounded-md border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-300 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {selectedTask ? (
         <TaskDetailsModal
           task={selectedTask}
           assignedTasks={assignedTasks}
           statusValue={statusSelections[selectedTask.taskId] ?? mapStatusToOption(selectedTask.status)}
-          onSelectStatus={(value) => handleStatusSelect(selectedTask.taskId, value)}
-          onUpdateStatus={() => handleStatusUpdate(selectedTask)}
+          onChangeStatus={(value) => handleStatusChange(selectedTask, value)}
           isUpdating={updatingTaskId === selectedTask.taskId}
           onClose={closeTaskDetails}
         />
@@ -313,18 +345,22 @@ const Tasks = () => {
 
 export default Tasks;
 
-const TaskDetailsModal = ({task, assignedTasks, statusValue, onSelectStatus, onUpdateStatus, isUpdating, onClose}) => {
+const TaskDetailsModal = ({task, assignedTasks, statusValue, onChangeStatus, isUpdating, onClose}) => {
   if (!task) {
     return null;
   }
 
   const project = task.project ?? {};
-  const statusLabel = STATUS_OPTIONS.find((option) => option.value === statusValue)?.label ?? formatStatusLabel(task.status);
-  const priorityLabel = (task.priority ?? '').toString();
+  const resolvedStatus = statusValue ?? task.status;
+  const statusLabel = formatStatusLabel(resolvedStatus);
+  const statusClasses = getStatusBadgeClasses(resolvedStatus);
+  const priorityLabel = getPriorityLabel(task.priority);
+  const priorityClasses = getPriorityBadgeClasses(task.priority);
   const projectTasks = assignedTasks.filter((item) => item.projectId === task.projectId);
   const upcomingText = projectTasks.length > 0
     ? `${projectTasks.length} ${projectTasks.length === 1 ? 'related task' : 'related tasks'}`
     : 'No related tasks assigned.';
+  const overdue = isTaskOverdue(task);
 
   return (
     <div
@@ -351,11 +387,11 @@ const TaskDetailsModal = ({task, assignedTasks, statusValue, onSelectStatus, onU
         <div className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
           <section className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusBadgeClasses(statusValue)}`}>
+              <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClasses}`}>
                 {statusLabel}
               </span>
               {priorityLabel ? (
-                <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${priorityBadgeClasses(priorityLabel)}`}>
+                <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${priorityClasses}`}>
                   Priority: {priorityLabel}
                 </span>
               ) : null}
@@ -367,7 +403,7 @@ const TaskDetailsModal = ({task, assignedTasks, statusValue, onSelectStatus, onU
             <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Due date</dt>
-                <dd className="text-slate-700 dark:text-slate-200">{formatDueDate(task.dueDate)}</dd>
+                <dd className={overdue ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-slate-700 dark:text-slate-200'}>{formatDueDate(task.dueDate)}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Assigned to</dt>
@@ -402,9 +438,9 @@ const TaskDetailsModal = ({task, assignedTasks, statusValue, onSelectStatus, onU
                       <p className={`font-medium ${relatedTask.taskId === task.taskId ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}>
                         {relatedTask.taskTitle ?? 'Untitled task'}
                       </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500">Due {formatDueDate(relatedTask.dueDate)}</p>
+                        <p className={`text-xs ${isTaskOverdue(relatedTask) ? 'text-red-600 dark:text-red-300 font-semibold' : 'text-slate-400 dark:text-slate-500'}`}>Due {formatDueDate(relatedTask.dueDate)}</p>
                     </div>
-                    <span className={`inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[10px] font-semibold capitalize ${statusBadgeClasses(relatedTask.status)}`}>
+                    <span className={`inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[10px] font-semibold capitalize ${getStatusBadgeClasses(relatedTask.status)}`}>
                       {formatStatusLabel(relatedTask.status)}
                     </span>
                   </li>
@@ -416,27 +452,23 @@ const TaskDetailsModal = ({task, assignedTasks, statusValue, onSelectStatus, onU
         <footer className="flex flex-col gap-3 border-t border-slate-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Update status</label>
-            <div className="flex gap-2">
-              <select
-                value={statusValue}
-                onChange={(event) => onSelectStatus(event.target.value)}
-                disabled={isUpdating}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={onUpdateStatus}
-                disabled={isUpdating}
-                className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-indigo-500"
-              >
-                {isUpdating ? 'Saving…' : 'Save status'}
-              </button>
+            <div className="flex flex-wrap gap-2">
+              {STATUS_CHOICES.map((option) => {
+                const isActive = statusValue === option.value;
+                const isSaving = isUpdating && statusValue === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onChangeStatus(option.value)}
+                    disabled={isUpdating}
+                    className={`${STATUS_BUTTON_BASE_CLASSES} ${isActive ? STATUS_BUTTON_ACTIVE_CLASSES : STATUS_BUTTON_INACTIVE_CLASSES}`}
+                  >
+                    {isSaving ? 'Updating…' : option.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <button

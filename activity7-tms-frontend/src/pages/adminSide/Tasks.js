@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {useLocation, useNavigate} from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import TaskFilters from '../../components/tasks/TaskFilters';
 import TaskModal from '../../components/tasks/TaskModal';
@@ -38,11 +39,14 @@ const formatDate = (value) => {
 };
 
 const Tasks = () => {
+	const location = useLocation();
+	const navigate = useNavigate();
 	const [tasks, setTasks] = useState([]);
 	const [projects, setProjects] = useState([]);
 	const [users, setUsers] = useState([]);
 	const [taskPage, setTaskPage] = useState(1);
 	const [selectedProjectId, setSelectedProjectId] = useState('');
+	const [selectedAssigneeId, setSelectedAssigneeId] = useState('');
 	const [isFetching, setIsFetching] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [deletingId, setDeletingId] = useState(null);
@@ -108,12 +112,40 @@ const Tasks = () => {
 	}, [loadProjects, loadUsers]);
 
 	useEffect(() => {
+		// Preselect filters when redirected from related pages and then clear navigation state.
+		const state = location.state;
+		if (!state) {
+			return;
+		}
+
+		let shouldClearState = false;
+
+		if (state.projectId) {
+			setSelectedProjectId(String(state.projectId));
+			shouldClearState = true;
+		}
+
+		if (state.assigneeId) {
+			setSelectedAssigneeId(String(state.assigneeId));
+			shouldClearState = true;
+		}
+
+		if (shouldClearState) {
+			navigate(location.pathname, {replace: true});
+		}
+	}, [location.pathname, location.state, navigate]);
+
+	useEffect(() => {
 		loadTasks();
 	}, [loadTasks]);
 
 	useEffect(() => {
 		setTaskPage(1);
 	}, [selectedProjectId]);
+
+	useEffect(() => {
+		setTaskPage(1);
+	}, [selectedAssigneeId]);
 
 	useEffect(() => {
 		if (!successMessage) {
@@ -242,9 +274,31 @@ const Tasks = () => {
 		setSelectedProjectId(value);
 	};
 
+	const tasksByProject = useMemo(() => {
+		if (!selectedProjectId) {
+			return tasks;
+		}
+
+		return tasks.filter((task) => String(task.projectId) === String(selectedProjectId));
+	}, [tasks, selectedProjectId]);
+
+	const filteredTasks = useMemo(() => {
+		if (!selectedAssigneeId) {
+			return tasksByProject;
+		}
+
+		const assigneeIdNumber = Number(selectedAssigneeId);
+
+		if (!Number.isFinite(assigneeIdNumber)) {
+			return tasksByProject;
+		}
+
+		return tasksByProject.filter((task) => task.assignedTo === assigneeIdNumber);
+	}, [tasksByProject, selectedAssigneeId]);
+
 	const totalTaskPages = useMemo(
-		() => Math.max(1, Math.ceil(tasks.length / ROWS_PER_PAGE)),
-		[tasks.length],
+		() => Math.max(1, Math.ceil(filteredTasks.length / ROWS_PER_PAGE)),
+		[filteredTasks.length],
 	);
 
 	useEffect(() => {
@@ -255,8 +309,11 @@ const Tasks = () => {
 
 	const paginatedTasks = useMemo(() => {
 		const start = (taskPage - 1) * ROWS_PER_PAGE;
-		return tasks.slice(start, start + ROWS_PER_PAGE);
-	}, [tasks, taskPage]);
+		return filteredTasks.slice(start, start + ROWS_PER_PAGE);
+	}, [filteredTasks, taskPage]);
+
+	const projectFilterActive = Boolean(selectedProjectId);
+	const projectFilterEmpty = projectFilterActive && tasksByProject.length === 0 && !isFetching;
 
 	return (
 		<section className="space-y-6">
@@ -280,8 +337,11 @@ const Tasks = () => {
 
 			<TaskFilters
 				projects={projects}
+				users={users}
 				selectedProjectId={selectedProjectId}
+				selectedAssigneeId={selectedAssigneeId}
 				onProjectChange={handleProjectFilterChange}
+				onAssigneeChange={setSelectedAssigneeId}
 				onCreateTask={openCreateModal}
 			/>
 
@@ -294,6 +354,7 @@ const Tasks = () => {
 				deletingId={deletingId}
 				page={taskPage}
 				totalPages={totalTaskPages}
+				projectFilterEmpty={projectFilterEmpty}
 				onPreviousPage={() => setTaskPage((previous) => Math.max(previous - 1, 1))}
 				onNextPage={() => setTaskPage((previous) => Math.min(previous + 1, totalTaskPages))}
 				onEditTask={openEditModal}

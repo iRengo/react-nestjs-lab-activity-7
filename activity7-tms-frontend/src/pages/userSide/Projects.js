@@ -1,10 +1,37 @@
-import React, {useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import useAssignedWork from '../../hooks/useAssignedWork';
 import {getDateOrNull, isTaskCompleted} from './utils/taskMetrics';
+import {formatStatusLabel, getStatusBadgeClasses} from '../../utils/badgeStyles';
+
+const isProjectOverdue = (project) => {
+  const status = (project.status ?? '').toString().toLowerCase();
+
+  if (status === 'completed') {
+    return false;
+  }
+
+  if (!project.endDate) {
+    return false;
+  }
+
+  const endDate = getDateOrNull(project.endDate);
+
+  if (!endDate) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return endDate.getTime() < today.getTime();
+};
+
+const ROWS_PER_PAGE = 5;
 
 const Projects = () => {
   const {projects: assignedProjects, tasks: assignedTasks, isLoading, error, reload} = useAssignedWork();
+  const [projectPage, setProjectPage] = useState(1);
+  const projectCount = assignedProjects.length;
 
   const rows = useMemo(() => {
     const startOfToday = new Date();
@@ -29,6 +56,26 @@ const Projects = () => {
       };
     });
   }, [assignedProjects, assignedTasks]);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(rows.length / ROWS_PER_PAGE)),
+    [rows.length],
+  );
+
+  useEffect(() => {
+    setProjectPage(1);
+  }, [projectCount]);
+
+  useEffect(() => {
+    if (projectPage > totalPages) {
+      setProjectPage(totalPages);
+    }
+  }, [projectPage, totalPages]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (projectPage - 1) * ROWS_PER_PAGE;
+    return rows.slice(start, start + ROWS_PER_PAGE);
+  }, [rows, projectPage]);
 
   return (
     <section className="space-y-6">
@@ -75,11 +122,16 @@ const Projects = () => {
                 </td>
               </tr>
             ) : (
-              rows.map(({project, progress, totalAssigned, completedAssigned, dueSoonest}) => (
+              paginatedRows.map(({project, progress, totalAssigned, completedAssigned, dueSoonest}) => {
+                const overdue = isProjectOverdue(project);
+
+                return (
                 <tr key={project.projectId} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                    <div>{project.projectName ?? 'Untitled project'}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">Status: {(project.status ?? 'pending').toString()}</div>
+                    <div className={overdue ? 'text-red-600 dark:text-red-300' : undefined}>{project.projectName ?? 'Untitled project'}</div>
+                    <span className={`mt-1 inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[11px] font-semibold capitalize ${getStatusBadgeClasses(project.status)}`}>
+                      {formatStatusLabel(project.status)}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Assignee</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
@@ -100,10 +152,35 @@ const Projects = () => {
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
+
+        {!isLoading && rows.length > 0 ? (
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+            <span>Page {projectPage} of {totalPages}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setProjectPage((previous) => Math.max(previous - 1, 1))}
+                disabled={projectPage <= 1}
+                className="rounded-md border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-300 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => setProjectPage((previous) => Math.min(previous + 1, totalPages))}
+                disabled={projectPage >= totalPages}
+                className="rounded-md border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-300 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

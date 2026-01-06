@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import useAssignedWork from '../../hooks/useAssignedWork';
 import {getDateOrNull, isTaskCompleted} from './utils/taskMetrics';
+import {formatStatusLabel, getStatusBadgeClasses} from '../../utils/badgeStyles';
 
 const Dashboard = () => {
   const {projects: assignedProjects, tasks: assignedTasks, isLoading, error, reload} = useAssignedWork();
@@ -112,16 +113,21 @@ const Dashboard = () => {
           {recentActivity.length === 0 && !isLoading ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">No recent updates yet.</p>
           ) : (
-            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <ul className="max-h-64 space-y-2 overflow-y-auto pr-1 text-sm text-slate-600 dark:text-slate-300">
               {recentActivity.map((task) => {
-                const statusLabel = (task.status ?? 'pending').toString();
                 const projectName = task.project?.projectName ?? 'Unnamed project';
+                const statusLabel = formatStatusLabel(task.status);
+                const statusClasses = getStatusBadgeClasses(task.status);
+
                 return (
-                  <li key={task.taskId} className="leading-snug">
-                    <span className="font-medium text-slate-900 dark:text-white">{task.taskTitle}</span>
-                    {' '}
-                    <span className="text-slate-500 dark:text-slate-400">({projectName})</span>
-                    <div className="text-xs text-slate-400 dark:text-slate-500">Status: {statusLabel}</div>
+                  <li key={task.taskId} className="space-y-1 leading-snug">
+                    <div className="flex flex-col">
+                      <span className="truncate font-medium text-slate-900 dark:text-white">{task.taskTitle}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{projectName}</span>
+                    </div>
+                    <span className={`inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[11px] font-semibold capitalize ${statusClasses}`}>
+                      {statusLabel}
+                    </span>
                   </li>
                 );
               })}
@@ -136,7 +142,7 @@ const Dashboard = () => {
           {upcomingDeadlines.length === 0 && !isLoading ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">No upcoming deadlines.</p>
           ) : (
-            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <ul className="max-h-64 space-y-2 overflow-y-auto pr-1 text-sm text-slate-600 dark:text-slate-300">
               {upcomingDeadlines.map((task) => {
                 const dueDate = getDateOrNull(task.dueDate);
                 const formattedDue = dueDate
@@ -147,7 +153,7 @@ const Dashboard = () => {
                   : 'No due date';
                 return (
                   <li key={task.taskId} className="leading-snug">
-                    <span className="font-medium text-slate-900 dark:text-white">{task.taskTitle}</span>
+                    <span className="truncate font-medium text-slate-900 dark:text-white">{task.taskTitle}</span>
                     <div className="text-xs text-slate-400 dark:text-slate-500">Due {formattedDue}</div>
                   </li>
                 );
@@ -168,7 +174,9 @@ const Dashboard = () => {
             {assignedProjects.map((project) => (
               <li key={project.projectId} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/70">
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.projectName ?? 'Untitled project'}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Status: {(project.status ?? 'pending').toString()}</p>
+                <span className={`mt-2 inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[11px] font-semibold capitalize ${getStatusBadgeClasses(project.status)}`}>
+                  {formatStatusLabel(project.status)}
+                </span>
               </li>
               ))}
             </ul>

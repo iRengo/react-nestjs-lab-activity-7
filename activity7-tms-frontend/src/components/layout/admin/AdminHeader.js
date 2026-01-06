@@ -67,7 +67,7 @@ const AdminHeader = () => {
   }, []);
 
   return (
-    <header className="flex items-center justify-between bg-white px-6 py-4 shadow-sm dark:bg-slate-900">
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 font-semibold text-white">
           TR

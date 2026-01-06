@@ -1,4 +1,29 @@
 import React from 'react';
+import {formatStatusLabel, getStatusBadgeClasses} from '../../utils/badgeStyles';
+
+const isProjectOverdue = (project) => {
+  const status = (project.status ?? '').toString().toLowerCase();
+
+  if (status === 'completed') {
+    return false;
+  }
+
+  if (!project.endDate) {
+    return false;
+  }
+
+  const endDate = new Date(project.endDate);
+
+  if (Number.isNaN(endDate.getTime())) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  endDate.setHours(0, 0, 0, 0);
+
+  return endDate.getTime() < today.getTime();
+};
 const ProjectsTable = ({
   projects,
   isFetching,
@@ -50,23 +75,28 @@ const ProjectsTable = ({
             </td>
           </tr>
         ) : (
-          projects.map((project) => (
-            <tr key={project.projectId} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-              <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                <div className="space-y-2">
-                  <p>{project.projectName}</p>
-                  <ProjectProgressBar projectId={project.projectId} projectProgress={projectProgress} />
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium capitalize text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200">
-                  {statusLabels[project.status] ?? project.status}
-                </span>
-              </td>
-              <td className="px-6 py-4">{formatDate(project.startDate)}</td>
-              <td className="px-6 py-4">{formatDate(project.endDate)}</td>
-              <td className="px-6 py-4">{resolveCreatorName(project)}</td>
-              <td className="px-6 py-4">
+          projects.map((project) => {
+            const statusLabel = statusLabels?.[project.status] ?? formatStatusLabel(project.status);
+            const statusClasses = getStatusBadgeClasses(project.status);
+            const overdue = isProjectOverdue(project);
+
+            return (
+              <tr key={project.projectId} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                  <div className="space-y-2">
+                    <p className={overdue ? 'text-red-600 dark:text-red-300' : undefined}>{project.projectName}</p>
+                    <ProjectProgressBar projectId={project.projectId} projectProgress={projectProgress} />
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex min-w-[6rem] justify-center rounded-full px-3 py-1 text-xs font-medium capitalize ${statusClasses}`}>
+                    {statusLabel}
+                  </span>
+                </td>
+                <td className="px-6 py-4">{formatDate(project.startDate)}</td>
+                <td className={`px-6 py-4 ${overdue ? 'text-red-600 dark:text-red-300 font-semibold' : ''}`}>{formatDate(project.endDate)}</td>
+                <td className="px-6 py-4">{resolveCreatorName(project)}</td>
+                <td className="px-6 py-4">
                 <div className="flex justify-end gap-2">
                   {onMarkProjectComplete ? (
                     <ProjectCompleteButton
@@ -108,9 +138,10 @@ const ProjectsTable = ({
                     {deletingId === project.projectId ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
-              </td>
-            </tr>
-          ))
+                </td>
+              </tr>
+            );
+          })
         )}
       </tbody>
       </table>

@@ -16,7 +16,7 @@ const UserSidebar = () => {
   const logoSrc = theme === 'dark' ? darkLogo : logo;
 
   return (
-    <aside className="flex h-screen w-64 flex-col bg-white px-4 py-6 shadow-sm transition-colors dark:bg-slate-900 dark:shadow-slate-900/30">
+    <aside className="sticky top-0 z-40 flex h-screen w-64 flex-shrink-0 flex-col overflow-y-auto bg-white px-4 py-6 shadow-sm transition-colors dark:bg-slate-900 dark:shadow-slate-900/30">
       <div className="mb-8 flex items-center gap-3 px-2">
         <img src={logoSrc} alt="TaskRush logo" className="h-10 w-10 rounded-lg object-contain transition-all" />
         <div>
