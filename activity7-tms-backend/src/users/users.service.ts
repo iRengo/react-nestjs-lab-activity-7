@@ -5,12 +5,15 @@ import * as bcrypt from 'bcrypt';
 import {CreateUserDto} from './dto/create-user.dto';
 import {UpdateUserDto} from './dto/update-user.dto';
 import {User} from './entities/user.entity';
+import {Task} from '../tasks/entities/task.entity';
 
 @Injectable()
 export class UsersService {
 	constructor(
 		@InjectRepository(User)
 		private readonly usersRepository: Repository<User>,
+		@InjectRepository(Task)
+		private readonly tasksRepository: Repository<Task>,
 	) {}
 
 	async create(createUserDto: CreateUserDto): Promise<User> {
@@ -27,7 +30,11 @@ export class UsersService {
 		return this.usersRepository.save(user);
 	}
 
-	async findAll(): Promise<User[]> {
+	async findAll(role?: string): Promise<User[]> {
+		if (role) {
+			return this.usersRepository.find({where: {role}});
+		}
+
 		return this.usersRepository.find();
 	}
 
@@ -62,11 +69,28 @@ export class UsersService {
 
 	async remove(userId: number): Promise<void> {
 		const user = await this.findOneById(userId);
+
+		await this.tasksRepository
+			.createQueryBuilder()
+			.update(Task)
+			.set({assignedTo: null})
+			.where('assigned_to = :userId', {userId})
+			.andWhere('(status IS NULL) OR (LOWER(status) NOT IN (:...completedStatuses))', {
+				completedStatuses: ['completed', 'complete', 'done'],
+			})
+			.execute();
+
 		await this.usersRepository.remove(user);
 	}
 
 	async findOneByEmail(email: string): Promise<User | null> {
 		return this.usersRepository.findOne({where: {email}});
+	}
+
+	async updatePassword(userId: number, hashedPassword: string): Promise<void> {
+		const user = await this.findOneById(userId);
+		user.password = hashedPassword;
+		await this.usersRepository.save(user);
 	}
 
 	private async ensureEmailIsUnique(email: string): Promise<void> {

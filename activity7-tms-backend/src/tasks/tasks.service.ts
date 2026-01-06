@@ -1,7 +1,7 @@
 import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';
-import {Project} from '../projects/entities/project.entity';
+import {Project, ProjectStatus} from '../projects/entities/project.entity';
 import {CreateTaskDto} from './dto/create-task.dto';
 import {UpdateTaskDto} from './dto/update-task.dto';
 import {Task} from './entities/task.entity';
@@ -29,6 +29,7 @@ export class TasksService {
     });
 
     const saved = await this.tasksRepository.save(task);
+    await this.syncProjectAssignmentState(project.projectId);
     return this.findOne(saved.taskId);
   }
 
@@ -67,6 +68,8 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
+    const originalProjectId = task.projectId;
+
     if (updateTaskDto.projectId && updateTaskDto.projectId !== task.projectId) {
       const updatedProject = await this.projectsRepository.findOne({where: {projectId: updateTaskDto.projectId}});
 
@@ -85,16 +88,57 @@ export class TasksService {
     Object.assign(task, updateTaskDto);
 
     const saved = await this.tasksRepository.save(task);
+    await this.syncProjectAssignmentState(saved.projectId);
+
+    if (originalProjectId !== saved.projectId) {
+      await this.syncProjectAssignmentState(originalProjectId);
+    }
+
     return this.findOne(saved.taskId);
   }
 
   async remove(taskId: number): Promise<{deleted: boolean}> {
-    const result = await this.tasksRepository.delete(taskId);
+    const task = await this.tasksRepository.findOne({where: {taskId}});
 
-    if (result.affected === 0) {
+    if (!task) {
       throw new NotFoundException('Task not found');
     }
 
+    await this.tasksRepository.remove(task);
+    await this.syncProjectAssignmentState(task.projectId);
+
     return {deleted: true};
+  }
+
+  private async syncProjectAssignmentState(projectId: number): Promise<void> {
+    const project = await this.projectsRepository.findOne({where: {projectId}});
+
+    if (!project) {
+      return;
+    }
+
+    const assignedCount = await this.tasksRepository
+      .createQueryBuilder('task')
+      .where('task.project_id = :projectId', {projectId})
+      .andWhere('task.assigned_to IS NOT NULL')
+      .andWhere('task.assigned_to > 0')
+      .getCount();
+
+    if (assignedCount > 0) {
+      if (project.status !== ProjectStatus.ONGOING) {
+        project.status = ProjectStatus.ONGOING;
+        await this.projectsRepository.save(project);
+      }
+      return;
+    }
+
+    if (project.status === ProjectStatus.COMPLETED) {
+      return;
+    }
+
+    if (project.status !== ProjectStatus.PENDING) {
+      project.status = ProjectStatus.PENDING;
+      await this.projectsRepository.save(project);
+    }
   }
 }
