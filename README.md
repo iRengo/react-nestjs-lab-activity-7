@@ -102,7 +102,7 @@ Root-level helper scripts (package.json):
 - `npm install nodemailer`
 
 **Root Folder**
-- `npm install` (installs concurrently and shared tooling)
+- `npm install` (for concurrently)
 
 ## 6. How the App Works (High-Level Overview)
 
@@ -132,8 +132,10 @@ Root-level helper scripts (package.json):
 **Modals Cover**
 - Login / signup (auth module)
 - Create / edit projects and tasks
-- Assign members and update roles
+- Assign members
 - View and update user profiles
 - Confirm destructive actions (delete project/task/user)
 
 This README outlines the project structure, installation steps for both frontend and backend, startup commands, and key functionality end-to-end.
+
+
