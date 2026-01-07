@@ -62,7 +62,7 @@ If the file is missing, the frontend falls back to `http://localhost:3000`.
 	- `cd activity7-tms-frontend`
 	- `npm start`
 
-The React app starts on **http://localhost:3001** (because the **http://localhost:3001** is used by backend).
+The React app starts on **http://localhost:3001** 
 
 ## 4. Run Frontend & Backend Together
 Root-level helper scripts (package.json):
@@ -137,5 +137,6 @@ Root-level helper scripts (package.json):
 - Confirm destructive actions (delete project/task/user)
 
 This README outlines the project structure, installation steps for both frontend and backend, startup commands, and key functionality end-to-end.
+
 
 
