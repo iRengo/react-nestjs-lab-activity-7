@@ -19,7 +19,7 @@ const parseError = async (response) => {
 
 export const getAllUsers = async ({role} = {}) => {
   const query = role ? `?role=${encodeURIComponent(role)}` : '';
-  const response = await fetch(`${API_BASE_URL}/users${query}`, {
+  const response = await fetch(`${API_BASE_URL}/user_tms${query}`, {
     method: 'GET',
     headers: withAuth(),
   });
@@ -33,7 +33,7 @@ export const getAllUsers = async ({role} = {}) => {
 };
 
 export const updateUser = async (userId, payload) => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+  const response = await fetch(`${API_BASE_URL}/user_tms/${userId}`, {
     method: 'PUT',
     headers: withAuth(),
     body: JSON.stringify(payload),
@@ -47,7 +47,7 @@ export const updateUser = async (userId, payload) => {
 };
 
 export const deleteUser = async (userId) => {
-  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+  const response = await fetch(`${API_BASE_URL}/user_tms/${userId}`, {
     method: 'DELETE',
     headers: withAuth(),
   });

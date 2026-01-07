@@ -9,6 +9,8 @@ import {Task} from '../tasks/entities/task.entity';
 
 @Injectable()
 export class UsersService {
+  private static readonly COMPLETED_STATUS_SET = new Set(['completed', 'complete', 'done']);
+
 	constructor(
 		@InjectRepository(User)
 		private readonly usersRepository: Repository<User>,
@@ -70,15 +72,25 @@ export class UsersService {
 	async remove(userId: number): Promise<void> {
 		const user = await this.findOneById(userId);
 
-		await this.tasksRepository
-			.createQueryBuilder()
-			.update(Task)
-			.set({assignedTo: null})
-			.where('assigned_to = :userId', {userId})
-			.andWhere('(status IS NULL) OR (LOWER(status) NOT IN (:...completedStatuses))', {
-				completedStatuses: ['completed', 'complete', 'done'],
-			})
-			.execute();
+		const tasksToEvaluate = await this.tasksRepository
+			.createQueryBuilder('task')
+			.select(['task.taskId AS taskId', 'task.status AS status'])
+			.where('task.assigned_to = :userId', {userId})
+			.getRawMany<{ taskId: number; status: string | null }>();
+
+		const taskIdsNeedingUnassign = tasksToEvaluate
+			.filter(({status}) => this.isIncompleteStatus(status))
+			.map(({taskId}) => Number(taskId))
+			.filter((taskId) => Number.isInteger(taskId));
+
+		if (taskIdsNeedingUnassign.length > 0) {
+			await this.tasksRepository
+				.createQueryBuilder()
+				.update(Task)
+				.set({assignedTo: null})
+				.where('task_id IN (:...taskIds)', {taskIds: taskIdsNeedingUnassign})
+				.execute();
+		}
 
 		await this.usersRepository.remove(user);
 	}
@@ -107,6 +119,14 @@ export class UsersService {
 		if (existingUser) {
 			throw new ConflictException('User ID is already registered');
 		}
+	}
+
+	private isIncompleteStatus(status: string | null | undefined): boolean {
+		if (!status) {
+			return true;
+		}
+
+		return !UsersService.COMPLETED_STATUS_SET.has(status.toLowerCase());
 	}
 
 }

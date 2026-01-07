@@ -133,7 +133,7 @@ const Signup = () => {
           lastName: member?.lastName ?? "",
           email: member?.email ?? "",
         }));
-        const accountResponse = await fetch(`${API_BASE_URL}/users/${rawId}`);
+        const accountResponse = await fetch(`${API_BASE_URL}/user_tms/${rawId}`);
         const accountExists = accountResponse.ok;
         setHasExistingAccount(accountExists);
         setIdStatus({
@@ -228,7 +228,7 @@ const Signup = () => {
       };
 
       try {
-        const response = await fetch(`${API_BASE_URL}/users`, {
+        const response = await fetch(`${API_BASE_URL}/user_tms`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
