@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {formatStatusLabel, getStatusBadgeClasses} from '../../utils/badgeStyles';
+import ConfirmModal from '../common/ConfirmModal';
 
 const isProjectOverdue = (project) => {
   const status = (project.status ?? '').toString().toLowerCase();
@@ -43,6 +44,27 @@ const ProjectsTable = ({
   onMarkProjectComplete,
   markingProjectId,
 }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
+  const handleDeleteClick = (projectId) => {
+    setPendingDeleteId(projectId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (pendingDeleteId) {
+      onDeleteProject(pendingDeleteId);
+    }
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
   const currentPage = Math.min(page, totalPages);
   const maxPages = Math.max(totalPages, 1);
   const previousHandler = onPreviousPage ?? (() => {});
@@ -132,7 +154,7 @@ const ProjectsTable = ({
                   <button
                     type="button"
                     disabled={deletingId === project.projectId}
-                    onClick={() => onDeleteProject(project.projectId)}
+                    onClick={() => handleDeleteClick(project.projectId)}
                     className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 shadow-sm transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-700 dark:bg-transparent dark:text-red-300 dark:hover:bg-red-900/30"
                   >
                     {deletingId === project.projectId ? 'Deleting...' : 'Delete'}
@@ -165,6 +187,15 @@ const ProjectsTable = ({
           Next
         </button>
       </div>
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete Project"
+        message="Are you sure you want to delete this project? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
       </div>
     </div>
   );

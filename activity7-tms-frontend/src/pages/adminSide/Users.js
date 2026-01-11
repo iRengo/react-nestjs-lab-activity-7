@@ -3,6 +3,7 @@ import { FiSearch } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import { deleteUser, getAllUsers, updateUser } from '../../services/api/usersApi';
+import ConfirmModal from '../../components/common/ConfirmModal';
 
 const ROWS_PER_PAGE = 6;
 
@@ -46,6 +47,8 @@ const Users = () => {
 	const [modalError, setModalError] = useState('');
 	const [isDeletingId, setIsDeletingId] = useState(null);
 	const [successMessage, setSuccessMessage] = useState('');
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [pendingDeleteUser, setPendingDeleteUser] = useState(null);
 
 	const loadUsers = useCallback(async () => {
 		setIsLoading(true);
@@ -191,32 +194,45 @@ const Users = () => {
 		}
 	};
 
-	const handleDeleteUser = async (userRecord) => {
+	const handleDeleteUser = (userRecord) => {
 		const rawUser = userRecord?.raw ?? users.find((item) => item.userId === userRecord?.id);
 
 		if (!rawUser) {
 			return;
 		}
 
-		const displayName = [rawUser.firstName, rawUser.lastName].filter(Boolean).join(' ').trim() || rawUser.email || 'this user';
-		const confirmation = window.confirm(`Delete ${displayName}? Assigned incomplete tasks will become unassigned.`);
-		if (!confirmation) {
+		setPendingDeleteUser(rawUser);
+		setConfirmOpen(true);
+		setSuccessMessage('');
+		setError('');
+	};
+
+	const handleConfirmDeleteUser = async () => {
+		if (!pendingDeleteUser?.userId) {
+			setConfirmOpen(false);
 			return;
 		}
 
-		setIsDeletingId(rawUser.userId);
+		setIsDeletingId(pendingDeleteUser.userId);
 		setError('');
 		setSuccessMessage('');
 
 		try {
-			await deleteUser(rawUser.userId);
+			await deleteUser(pendingDeleteUser.userId);
 			setSuccessMessage('User deleted successfully.');
 			await loadUsers();
 		} catch (err) {
 			setError(err?.message || 'Failed to delete user.');
 		} finally {
 			setIsDeletingId(null);
+			setConfirmOpen(false);
+			setPendingDeleteUser(null);
 		}
+	};
+
+	const handleCancelDeleteUser = () => {
+		setConfirmOpen(false);
+		setPendingDeleteUser(null);
 	};
 
 	const handleViewTasks = (userRecord) => {
@@ -290,9 +306,8 @@ const Users = () => {
 									<div>
 										<p className="text-sm font-semibold text-slate-900 dark:text-white">{user.fullName}</p>
 										<p className="text-xs text-slate-400 dark:text-slate-300">{user.email || 'No email provided'}</p>
-										<p className="text-xs text-slate-500 dark:text-slate-300">{user.role}</p>
-										<p className="text-xs text-slate-500 dark:text-slate-300">Status: {user.status}</p>
-									</div>
+										<p className="text-xs text-slate-500 dark:text-slate-300 uppercase font-semibold">{user.role}</p>
+										</div>
 								</div>
 								<div className="pointer-events-none absolute inset-x-0 bottom-0 flex translate-y-3 gap-2 bg-white/95 px-5 pb-4 pt-3 opacity-0 shadow-[0_-6px_12px_-8px_rgba(15,23,42,0.25)] transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:bg-slate-900/95">
 									<button
@@ -347,6 +362,16 @@ const Users = () => {
 				</div>
 			) : null}
 			</section>
+
+			<ConfirmModal
+				open={confirmOpen}
+				title="Delete User"
+				message={`Delete ${pendingDeleteUser ? ([pendingDeleteUser.firstName, pendingDeleteUser.lastName].filter(Boolean).join(' ').trim() || pendingDeleteUser.email || 'this user') : 'this user'}? Assigned incomplete tasks will become unassigned.`}
+				onConfirm={handleConfirmDeleteUser}
+				onCancel={handleCancelDeleteUser}
+				confirmText="Delete"
+				cancelText="Cancel"
+			/>
 
 			{isEditModalOpen && editingUser ? (
 				<EditUserModal
@@ -418,25 +443,7 @@ const EditUserModal = ({user, formState, onChange, onClose, onSubmit, isSaving, 
 						className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/40"
 					/>
 				</label>
-				<label className="flex flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-300">
-					<span>Status</span>
-					<select
-						name="status"
-						value={formState.status}
-						onChange={onChange}
-						className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/40"
-					>
-						{statusOptions.map((status) => (
-							<option key={status} value={status}>
-								{status}
-							</option>
-						))}
-					</select>
-				</label>
-
-				{error && (
-					<p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-500/10 dark:text-red-300">{error}</p>
-				)}
+				
 
 				<footer className="flex justify-end gap-2 pt-2">
 					<button

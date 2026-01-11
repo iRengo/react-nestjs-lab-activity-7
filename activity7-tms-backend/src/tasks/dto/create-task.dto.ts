@@ -6,6 +6,13 @@ export enum TaskPriority {
   HIGH = 'high',
 }
 
+export enum TaskStatus {
+  PENDING = 'pending',
+  ONGOING = 'ongoing',
+  FOR_REVIEW = 'for review',
+  COMPLETED = 'completed',
+}
+
 export class CreateTaskDto {
   @IsString()
   @IsNotEmpty()
@@ -26,9 +33,8 @@ export class CreateTaskDto {
   priority?: TaskPriority;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  status?: string;
+  @IsEnum(TaskStatus)
+  status?: TaskStatus;
 
   @IsOptional()
   @IsDateString()

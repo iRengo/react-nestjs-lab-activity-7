@@ -7,7 +7,7 @@ import {formatStatusLabel, getPriorityBadgeClasses, getPriorityLabel, getStatusB
 
 const STATUS_CHOICES = [
   {value: 'ongoing', label: 'Ongoing'},
-  {value: 'completed', label: 'Completed'},
+  {value: 'for review', label: 'For Review'},
 ];
 
 const TASKS_PER_PAGE = 5;
@@ -21,6 +21,10 @@ const mapStatusToOption = (status) => {
 
   if (['completed', 'complete', 'done', 'resolved'].includes(normalized)) {
     return 'completed';
+  }
+
+  if (['for review', 'review', 'in review'].includes(normalized)) {
+    return 'for review';
   }
 
   if (['in progress', 'ongoing', 'active', 'processing'].includes(normalized)) {
@@ -142,6 +146,11 @@ const Tasks = () => {
   }, [orderedTasks, taskPage]);
 
   const handleStatusChange = async (task, nextStatus) => {
+    const normalizedStatus = normalizeStatus(task.status);
+    if (normalizedStatus === 'completed') {
+      return;
+    }
+
     if (updatingTaskId === task.taskId) {
       return;
     }
@@ -241,6 +250,7 @@ const Tasks = () => {
           paginatedTasks.map((task) => {
             const currentOption = mapStatusToOption(task.status);
             const statusValue = statusSelections[task.taskId] ?? currentOption;
+            const isCompletedLocked = currentOption === 'completed';
             const statusLabel = formatStatusLabel(statusSelections[task.taskId] ?? task.status);
             const statusClasses = getStatusBadgeClasses(statusValue);
             const priorityLabel = getPriorityLabel(task.priority);
@@ -277,7 +287,7 @@ const Tasks = () => {
                             key={option.value}
                             type="button"
                             onClick={() => handleStatusChange(task, option.value)}
-                            disabled={updatingTaskId === task.taskId}
+                            disabled={updatingTaskId === task.taskId || isCompletedLocked}
                             className={`${STATUS_BUTTON_BASE_CLASSES} ${isActive ? STATUS_BUTTON_ACTIVE_CLASSES : STATUS_BUTTON_INACTIVE_CLASSES}`}
                           >
                             {isSaving ? 'Updating…' : option.label}
@@ -352,6 +362,7 @@ const TaskDetailsModal = ({task, assignedTasks, statusValue, onChangeStatus, isU
 
   const project = task.project ?? {};
   const resolvedStatus = statusValue ?? task.status;
+  const normalizedStatus = normalizeStatus(resolvedStatus);
   const statusLabel = formatStatusLabel(resolvedStatus);
   const statusClasses = getStatusBadgeClasses(resolvedStatus);
   const priorityLabel = getPriorityLabel(task.priority);
@@ -456,13 +467,14 @@ const TaskDetailsModal = ({task, assignedTasks, statusValue, onChangeStatus, isU
               {STATUS_CHOICES.map((option) => {
                 const isActive = statusValue === option.value;
                 const isSaving = isUpdating && statusValue === option.value;
+                const isLocked = normalizedStatus === 'completed';
 
                 return (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => onChangeStatus(option.value)}
-                    disabled={isUpdating}
+                    disabled={isUpdating || isLocked}
                     className={`${STATUS_BUTTON_BASE_CLASSES} ${isActive ? STATUS_BUTTON_ACTIVE_CLASSES : STATUS_BUTTON_INACTIVE_CLASSES}`}
                   >
                     {isSaving ? 'Updating…' : option.label}

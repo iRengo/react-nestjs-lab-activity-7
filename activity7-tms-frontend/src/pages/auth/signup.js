@@ -16,6 +16,24 @@ const initialFormState = {
   confirmPassword: "",
 };
 
+const censorName = (name) => {
+  if (!name) return "";
+  const visibleChars = 2;
+  if (name.length <= visibleChars) return name;
+  const masked = "*".repeat(name.length - visibleChars);
+  return name.slice(0, visibleChars) + masked;
+};
+
+const censorEmail = (email) => {
+  if (!email) return "";
+  const [user, domain] = email.split("@");
+  if (!user) return email;
+  const visibleChars = 2;
+  const maskedUser = user.slice(0, visibleChars) + "*".repeat(user.length - visibleChars);
+  return maskedUser + "@" + domain;
+};
+
+
 const Signup = () => {
   const [formData, setFormData] = useState(initialFormState);
   const [idStatus, setIdStatus] = useState({ type: "", message: "" });
@@ -304,11 +322,10 @@ const Signup = () => {
             )}
             {!isCheckingId && idStatus.message && (
               <p
-                className={`mt-2 text-xs transition-colors ${
-                  idStatus.type === "success"
+                className={`mt-2 text-xs transition-colors ${idStatus.type === "success"
                     ? "text-green-600 dark:text-green-400"
                     : "text-red-600 dark:text-red-400"
-                }`}
+                  }`}
                 id="memberId-feedback"
               >
                 {idStatus.message}
@@ -326,7 +343,7 @@ const Signup = () => {
                 id="firstName"
                 name="firstName"
                 placeholder="Enter your first name"
-                value={formData.firstName}
+                value={censorName(formData.firstName)}
                 onChange={handleChange}
                 disabled
               />
@@ -341,7 +358,7 @@ const Signup = () => {
                 id="lastName"
                 name="lastName"
                 placeholder="Enter your last name"
-                value={formData.lastName}
+                value={censorName(formData.lastName)}
                 onChange={handleChange}
                 disabled
               />
@@ -357,7 +374,7 @@ const Signup = () => {
               id="email"
               name="email"
               placeholder="Enter your email"
-              value={formData.email}
+              value={censorEmail(formData.email)}
               onChange={handleChange}
               disabled
             />
@@ -397,11 +414,10 @@ const Signup = () => {
 
           {submitStatus.message && (
             <p
-              className={`mb-3 text-sm transition-colors ${
-                submitStatus.type === "success"
+              className={`mb-3 text-sm transition-colors ${submitStatus.type === "success"
                   ? "text-green-600 dark:text-green-400"
                   : "text-red-600 dark:text-red-400"
-              }`}
+                }`}
             >
               {submitStatus.message}
             </p>

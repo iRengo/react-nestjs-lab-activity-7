@@ -22,6 +22,7 @@ import {TasksService} from './tasks.service';
 interface RequestWithUser extends Request {
   user?: {
     userId: number;
+    role?: string;
   };
 }
 
@@ -67,8 +68,12 @@ export class TasksController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) taskId: number, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(taskId, updateTaskDto);
+  update(
+    @Param('id', ParseIntPipe) taskId: number,
+    @Body() updateTaskDto: UpdateTaskDto,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.tasksService.update(taskId, updateTaskDto, request.user);
   }
 
   @Delete(':id')

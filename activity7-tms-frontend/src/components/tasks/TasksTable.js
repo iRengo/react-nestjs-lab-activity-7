@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {formatStatusLabel, getPriorityBadgeClasses, getPriorityLabel, getStatusBadgeClasses} from '../../utils/badgeStyles';
+import ConfirmModal from '../common/ConfirmModal';
 
 const isTaskOverdue = (task) => {
   const status = (task.status ?? '').toString().toLowerCase();
@@ -38,8 +39,31 @@ const TasksTable = ({
   onNextPage,
   onEditTask,
   onDeleteTask,
+  onMarkComplete,
+  markingId,
   projectFilterEmpty = false,
 }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
+  const handleDeleteClick = (taskId) => {
+    setPendingDeleteId(taskId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (pendingDeleteId) {
+      onDeleteTask(pendingDeleteId);
+    }
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+  };
+
   const currentPage = Math.min(page, totalPages);
   const maxPages = Math.max(totalPages, 1);
   const previousHandler = onPreviousPage ?? (() => {});
@@ -79,6 +103,10 @@ const TasksTable = ({
             const priorityLabel = getPriorityLabel(task.priority);
             const priorityClasses = getPriorityBadgeClasses(task.priority);
             const overdue = isTaskOverdue(task);
+            const normalizedStatus = (task.status ?? '').toString().toLowerCase();
+            const isForReview = normalizedStatus === 'for review';
+            const isCompleted = normalizedStatus === 'completed';
+            const disableComplete = markingId === task.taskId || isCompleted || !isForReview;
 
             return (
               <tr key={task.taskId} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
@@ -102,6 +130,17 @@ const TasksTable = ({
                 <td className={`px-6 py-4 ${overdue ? 'text-red-600 dark:text-red-300 font-semibold' : ''}`}>{formatDate(task.dueDate)}</td>
                 <td className="px-6 py-4">
                   <div className="flex justify-end gap-2">
+                    {onMarkComplete ? (
+                      <button
+                        type="button"
+                        disabled={disableComplete}
+                        onClick={() => onMarkComplete(task)}
+                        title={!isForReview && !isCompleted ? 'Only tasks in "For Review" can be marked as completed.' : undefined}
+                        className="rounded-md border border-emerald-200 bg-white px-3 py-1 text-xs font-medium text-emerald-700 shadow-sm transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-700 dark:bg-transparent dark:text-emerald-200 dark:hover:bg-emerald-900/30"
+                      >
+                        {markingId === task.taskId ? 'Marking...' : 'Mark Completed'}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => onEditTask(task)}
@@ -112,7 +151,7 @@ const TasksTable = ({
                     <button
                       type="button"
                       disabled={deletingId === task.taskId}
-                      onClick={() => onDeleteTask(task.taskId)}
+                      onClick={() => handleDeleteClick(task.taskId)}
                       className="rounded-md border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 shadow-sm transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-700 dark:bg-transparent dark:text-red-300 dark:hover:bg-red-900/30"
                     >
                       {deletingId === task.taskId ? 'Deleting...' : 'Delete'}
@@ -145,6 +184,15 @@ const TasksTable = ({
           Next
         </button>
       </div>
+        <ConfirmModal
+          open={confirmOpen}
+          title="Delete Task"
+          message="Are you sure you want to delete this task? This action cannot be undone."
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          confirmText="Delete"
+          cancelText="Cancel"
+        />
       </div>
     </div>
   );

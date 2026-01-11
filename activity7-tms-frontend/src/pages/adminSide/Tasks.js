@@ -50,6 +50,7 @@ const Tasks = () => {
 	const [isFetching, setIsFetching] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [deletingId, setDeletingId] = useState(null);
+	const [markingId, setMarkingId] = useState(null);
 	const [taskForm, setTaskForm] = useState(() => ({...defaultTaskState}));
 	const [validationErrors, setValidationErrors] = useState({});
 	const [errorMessage, setErrorMessage] = useState('');
@@ -250,12 +251,6 @@ const Tasks = () => {
 	};
 
 	const handleDeleteTask = async (taskId) => {
-		const confirmation = window.confirm('Are you sure you want to delete this task?');
-
-		if (!confirmation) {
-			return;
-		}
-
 		setDeletingId(taskId);
 		setErrorMessage('');
 
@@ -267,6 +262,33 @@ const Tasks = () => {
 			setErrorMessage(error.message ?? 'Unable to delete the task.');
 		} finally {
 			setDeletingId(null);
+		}
+	};
+
+	const handleMarkComplete = async (task) => {
+		if (!task?.taskId) {
+			return;
+		}
+
+		const normalizedStatus = (task.status ?? '').toString().toLowerCase();
+
+		if (normalizedStatus !== 'for review') {
+			setErrorMessage('Only tasks in "For Review" status can be marked as completed.');
+			return;
+		}
+
+		setMarkingId(task.taskId);
+		setErrorMessage('');
+		setSuccessMessage('');
+
+		try {
+			await updateTask(task.taskId, {status: 'completed'});
+			setSuccessMessage('Task marked as completed.');
+			await loadTasks();
+		} catch (error) {
+			setErrorMessage(error.message ?? 'Unable to mark task as completed.');
+		} finally {
+			setMarkingId(null);
 		}
 	};
 
@@ -359,6 +381,8 @@ const Tasks = () => {
 				onNextPage={() => setTaskPage((previous) => Math.min(previous + 1, totalTaskPages))}
 				onEditTask={openEditModal}
 				onDeleteTask={handleDeleteTask}
+				onMarkComplete={handleMarkComplete}
+				markingId={markingId}
 			/>
 
 			<TaskModal

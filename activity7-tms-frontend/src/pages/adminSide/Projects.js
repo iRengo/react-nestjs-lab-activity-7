@@ -254,12 +254,6 @@ const Projects = () => {
 	};
 
 	const handleDeleteProject = async (projectId) => {
-		const confirmation = window.confirm('Are you sure you want to delete this project?');
-
-		if (!confirmation) {
-			return;
-		}
-
 		setDeletingId(projectId);
 		setErrorMessage('');
 

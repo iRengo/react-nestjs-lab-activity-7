@@ -1,8 +1,8 @@
-import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {BadRequestException, ForbiddenException, Injectable, NotFoundException} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';
 import {Project, ProjectStatus} from '../projects/entities/project.entity';
-import {CreateTaskDto} from './dto/create-task.dto';
+import {CreateTaskDto, TaskStatus} from './dto/create-task.dto';
 import {UpdateTaskDto} from './dto/update-task.dto';
 import {Task} from './entities/task.entity';
 
@@ -61,7 +61,11 @@ export class TasksService {
     });
   }
 
-  async update(taskId: number, updateTaskDto: UpdateTaskDto): Promise<Task> {
+  async update(
+    taskId: number,
+    updateTaskDto: UpdateTaskDto,
+    user?: {role?: string},
+  ): Promise<Task> {
     const task = await this.tasksRepository.findOne({where: {taskId}, relations: ['project']});
 
     if (!task) {
@@ -83,6 +87,23 @@ export class TasksService {
 
     if (updateTaskDto.assignedTo === null) {
       throw new BadRequestException('assignedTo cannot be null. Omit the field instead.');
+    }
+
+    const wantsCompleted = typeof updateTaskDto.status === 'string'
+      && updateTaskDto.status.toLowerCase() === TaskStatus.COMPLETED;
+    const normalizedRole = (user?.role ?? '').toLowerCase();
+    const currentStatus = (task.status ?? '').toLowerCase();
+
+    if (currentStatus === TaskStatus.COMPLETED && updateTaskDto.status && updateTaskDto.status.toLowerCase() !== TaskStatus.COMPLETED) {
+      throw new BadRequestException('Completed tasks cannot be reopened.');
+    }
+
+    if (wantsCompleted && normalizedRole !== 'admin') {
+      throw new ForbiddenException('Only admins can mark tasks as completed.');
+    }
+
+    if (wantsCompleted && currentStatus !== TaskStatus.FOR_REVIEW) {
+      throw new BadRequestException('Only tasks in "for review" status can be marked as completed.');
     }
 
     Object.assign(task, updateTaskDto);

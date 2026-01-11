@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const TaskModal = ({
   isOpen,
   mode = 'create',
   formState,
-  validationErrors,
   isSubmitting,
   projects,
   users = [],
@@ -12,165 +11,191 @@ const TaskModal = ({
   onChange,
   onSubmit,
 }) => {
-  if (!isOpen) {
-    return null;
-  }
+  const [errors, setErrors] = useState({});
+
+  if (!isOpen) return null;
+
+  // ---------------- VALIDATION ----------------
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formState.taskTitle?.trim()) {
+      newErrors.taskTitle = 'Title is required';
+    }
+
+    if (!formState.projectId) {
+      newErrors.projectId = 'Project is required';
+    }
+
+    if (!formState.taskDescription?.trim()) {
+      newErrors.taskDescription = 'Description is required';
+    }
+
+    if (!formState.priority) {
+      newErrors.priority = 'Priority is required';
+    }
+
+    if (!formState.dueDate) {
+      newErrors.dueDate = 'Due date is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ---------------- SUBMIT ----------------
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    onSubmit(e);
+  };
+
+  // ---------------- INPUT CLASS ----------------
+  const inputClass = (field) =>
+    `mt-1 w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 ${
+      errors[field]
+        ? 'border-red-500 focus:ring-red-500'
+        : 'border-slate-300 focus:ring-indigo-500 dark:border-slate-600'
+    } dark:bg-slate-800 dark:text-slate-100`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="text-base font-semibold">
             {mode === 'edit' ? 'Edit Task' : 'Create Task'}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-sm text-slate-500 transition hover:text-slate-700 focus:outline-none dark:text-slate-300 dark:hover:text-slate-100"
-          >
+          <button onClick={onClose} className="text-sm text-slate-500">
             Close
           </button>
         </div>
-        <form onSubmit={onSubmit} className="space-y-4 px-6 py-5">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
+          {/* Title & Project */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="taskTitle" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                Title
-              </label>
+              <label className="text-sm font-medium">Title</label>
               <input
-                id="taskTitle"
                 name="taskTitle"
-                type="text"
                 value={formState.taskTitle}
                 onChange={onChange}
-                required
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                className={inputClass('taskTitle')}
               />
-              {validationErrors.taskTitle ? (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.taskTitle}</p>
-              ) : null}
+              {errors.taskTitle && (
+                <p className="text-xs text-red-500 mt-1">{errors.taskTitle}</p>
+              )}
             </div>
+
             <div>
-              <label htmlFor="projectId" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                Project
-              </label>
+              <label className="text-sm font-medium">Project</label>
               <select
-                id="projectId"
                 name="projectId"
                 value={formState.projectId}
                 onChange={onChange}
-                required
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                className={inputClass('projectId')}
               >
-                <option value="">Select a project</option>
-                {projects.map((project) => (
-                  <option key={project.projectId} value={project.projectId}>
-                    {project.projectName}
+                <option value="">Select project</option>
+                {projects.map((p) => (
+                  <option key={p.projectId} value={p.projectId}>
+                    {p.projectName}
                   </option>
                 ))}
               </select>
-              {validationErrors.projectId ? (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.projectId}</p>
-              ) : null}
+              {errors.projectId && (
+                <p className="text-xs text-red-500 mt-1">{errors.projectId}</p>
+              )}
             </div>
           </div>
 
+          {/* Description */}
           <div>
-            <label htmlFor="taskDescription" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Description
-            </label>
+            <label className="text-sm font-medium">Description</label>
             <textarea
-              id="taskDescription"
               name="taskDescription"
+              rows={3}
               value={formState.taskDescription}
               onChange={onChange}
-              rows={3}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              className={inputClass('taskDescription')}
             />
+            {errors.taskDescription && (
+              <p className="text-xs text-red-500 mt-1">
+                {errors.taskDescription}
+              </p>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {/* Assigned / Priority */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="assignedTo" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                Assigned To
-              </label>
+              <label className="text-sm font-medium">Assigned To</label>
               <select
-                id="assignedTo"
                 name="assignedTo"
                 value={formState.assignedTo}
                 onChange={onChange}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                className={inputClass()}
               >
                 <option value="">Unassigned</option>
-                {users.map((user) => (
-                  <option key={user.userId} value={user.userId}>
-                    {`${user.firstName} ${user.lastName}`.trim()}
+                {users.map((u) => (
+                  <option key={u.userId} value={u.userId}>
+                    {`${u.firstName} ${u.lastName}`}
                   </option>
                 ))}
               </select>
             </div>
+
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                Priority
-              </label>
+              <label className="text-sm font-medium">Priority</label>
               <select
-                id="priority"
                 name="priority"
                 value={formState.priority}
                 onChange={onChange}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                className={inputClass('priority')}
               >
                 <option value="">Select priority</option>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
-            </div>
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                Status
-              </label>
-              <input
-                id="status"
-                name="status"
-                type="text"
-                value={formState.status}
-                disabled
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm capitalize text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-              />
+              {errors.priority && (
+                <p className="text-xs text-red-500 mt-1">{errors.priority}</p>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="dueDate" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                Due Date
-              </label>
-              <input
-                id="dueDate"
-                name="dueDate"
-                type="date"
-                value={formState.dueDate}
-                onChange={onChange}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-              />
-            </div>
+          {/* Due Date */}
+          <div className="md:w-1/2">
+            <label className="text-sm font-medium">Due Date</label>
+            <input
+              type="date"
+              name="dueDate"
+              value={formState.dueDate}
+              onChange={onChange}
+              className={inputClass('dueDate')}
+            />
+            {errors.dueDate && (
+              <p className="text-xs text-red-500 mt-1">{errors.dueDate}</p>
+            )}
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:border-slate-600 dark:text-slate-200 dark:hover:border-slate-400"
+              className="border px-4 py-2 rounded-md"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-indigo-500"
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md disabled:opacity-60"
             >
-              {isSubmitting ? 'Saving...' : mode === 'edit' ? 'Save Changes' : 'Create Task'}
+              {isSubmitting ? 'Saving...' : 'Save Task'}
             </button>
           </div>
         </form>
