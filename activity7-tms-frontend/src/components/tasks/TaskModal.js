@@ -13,6 +13,16 @@ const TaskModal = ({
 }) => {
   const [errors, setErrors] = useState({});
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const toDateInput = (date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const minDueDate = toDateInput(today);
+
   if (!isOpen) return null;
 
   // ---------------- VALIDATION ----------------
@@ -174,6 +184,7 @@ const TaskModal = ({
               name="dueDate"
               value={formState.dueDate}
               onChange={onChange}
+              min={minDueDate}
               className={inputClass('dueDate')}
             />
             {errors.dueDate && (

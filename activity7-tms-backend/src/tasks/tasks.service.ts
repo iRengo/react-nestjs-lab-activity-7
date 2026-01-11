@@ -72,6 +72,12 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
+    const currentStatus = (task.status ?? '').toLowerCase();
+
+    if (currentStatus === TaskStatus.COMPLETED) {
+      throw new BadRequestException('Completed tasks cannot be edited.');
+    }
+
     const originalProjectId = task.projectId;
 
     if (updateTaskDto.projectId && updateTaskDto.projectId !== task.projectId) {
@@ -92,7 +98,8 @@ export class TasksService {
     const wantsCompleted = typeof updateTaskDto.status === 'string'
       && updateTaskDto.status.toLowerCase() === TaskStatus.COMPLETED;
     const normalizedRole = (user?.role ?? '').toLowerCase();
-    const currentStatus = (task.status ?? '').toLowerCase();
+
+    const isForReview = currentStatus === TaskStatus.FOR_REVIEW;
 
     if (currentStatus === TaskStatus.COMPLETED && updateTaskDto.status && updateTaskDto.status.toLowerCase() !== TaskStatus.COMPLETED) {
       throw new BadRequestException('Completed tasks cannot be reopened.');
@@ -104,6 +111,10 @@ export class TasksService {
 
     if (wantsCompleted && currentStatus !== TaskStatus.FOR_REVIEW) {
       throw new BadRequestException('Only tasks in "for review" status can be marked as completed.');
+    }
+
+    if (normalizedRole === 'admin' && isForReview && !wantsCompleted) {
+      throw new BadRequestException('For review tasks cannot be edited by admins unless marking as completed.');
     }
 
     Object.assign(task, updateTaskDto);

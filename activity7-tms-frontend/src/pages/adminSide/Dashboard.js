@@ -344,22 +344,12 @@ const Dashboard = () => {
 			});
 	}, [tasks, users]);
 
-	const headerActions = (
-		<button
-			type="button"
-			onClick={() => navigate('/adminSide/projects')}
-			className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
-		>
-			Create Project
-		</button>
-	);
 
 	return (
 		<section className="space-y-6">
 			<PageHeader
 				title="Dashboard"
 				subtitle="Monitor key metrics and stay ahead of your team."
-				actions={headerActions}
 			/>
 
 			{error ? (

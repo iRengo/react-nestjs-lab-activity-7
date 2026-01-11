@@ -62,6 +62,15 @@ const Projects = () => {
 	const [editingProjectId, setEditingProjectId] = useState(null);
 	const [selectedProject, setSelectedProject] = useState(null);
 
+	const addDays = (dateString, days) => {
+		const base = new Date(dateString);
+		base.setDate(base.getDate() + days);
+		const year = base.getFullYear();
+		const month = `${base.getMonth() + 1}`.padStart(2, '0');
+		const day = `${base.getDate()}`.padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	};
+
 	const loadProjects = useCallback(async () => {
 		setIsFetching(true);
 		setErrorMessage('');
@@ -192,6 +201,13 @@ const Projects = () => {
 	};
 
 	const openEditModal = (project) => {
+		const normalizedStatus = (project?.status ?? '').toString().toLowerCase();
+
+		if (normalizedStatus === 'completed') {
+			setErrorMessage('Completed projects cannot be edited.');
+			return;
+		}
+
 		setFormState({
 			projectName: project.projectName ?? '',
 			projectDescription: project.projectDescription ?? '',
@@ -211,18 +227,52 @@ const Projects = () => {
 
 	const handleFormChange = (event) => {
 		const {name, value} = event.target;
-		setFormState((previous) => ({
-			...previous,
-			[name]: value,
-		}));
+
+		setFormState((previous) => {
+			if (name === 'startDate' && value) {
+				const autoEnd = previous.endDate && new Date(previous.endDate) >= new Date(value)
+					? previous.endDate
+					: addDays(value, 3);
+
+				return {
+					...previous,
+					startDate: value,
+					endDate: autoEnd,
+				};
+			}
+
+			return {
+				...previous,
+				[name]: value,
+			};
+		});
 	};
 
 	const handleCreateOrUpdateProject = async (event) => {
 		event.preventDefault();
 
+
 		if (formState.startDate && formState.endDate && formState.startDate > formState.endDate) {
 			setErrorMessage('End date must be after the start date.');
 			return;
+		}
+
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const startDateObj = formState.startDate ? new Date(formState.startDate) : null;
+		const endDateObj = formState.endDate ? new Date(formState.endDate) : null;
+
+		if (startDateObj && startDateObj < today) {
+			setErrorMessage('Start date cannot be in the past.');
+			return;
+		}
+
+		if (startDateObj && endDateObj) {
+			const dayDiff = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
+			if (dayDiff < 3) {
+				setErrorMessage('End date must be at least 3 days after the start date.');
+				return;
+			}
 		}
 
 		setIsSubmitting(true);
@@ -281,11 +331,23 @@ const Projects = () => {
 		}
 
 		const relatedTasks = tasks.filter((task) => task.projectId === project.projectId);
+		if (relatedTasks.length === 0) {
+			setSuccessMessage('');
+			setErrorMessage('Add and complete at least one task before marking the project as completed.');
+			return;
+		}
 		const hasIncompleteTask = relatedTasks.some((task) => !isTaskStatusCompleted(task.status));
+		const hasCompletedTask = relatedTasks.some((task) => isTaskStatusCompleted(task.status));
 
 		if (hasIncompleteTask) {
 			setSuccessMessage('');
 			setErrorMessage('Complete all tasks for this project before marking it as completed.');
+			return;
+		}
+
+		if (!hasCompletedTask) {
+			setSuccessMessage('');
+			setErrorMessage('At least one task must be completed to mark the project as completed.');
 			return;
 		}
 
@@ -361,6 +423,7 @@ const Projects = () => {
 				onDeleteProject={handleDeleteProject}
 				onMarkProjectComplete={handleMarkProjectCompleted}
 				markingProjectId={markingProjectId}
+				editButtonExtraClass="disabled:cursor-not-allowed text-gray-400"
 			/>
 
 			<CreateProjectModal

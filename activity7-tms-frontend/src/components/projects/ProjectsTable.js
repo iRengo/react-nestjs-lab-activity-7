@@ -132,7 +132,11 @@ const ProjectsTable = ({
                     <button
                       type="button"
                       onClick={() => onEditProject(project)}
-                      className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:text-slate-200 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
+                      disabled={(project.status ?? '').toString().toLowerCase() === 'completed'}
+                      title={(project.status ?? '').toString().toLowerCase() === 'completed' ? 'Completed projects are locked from edits.' : undefined}
+                      className={
+                        `rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:text-slate-200 dark:hover:border-indigo-400 dark:hover:text-indigo-200 ${((project.status ?? '').toString().toLowerCase() === 'completed') ? 'cursor-not-allowed disabled:cursor-not-allowed' : ''}`
+                      }
                     >
                       Edit
                     </button>
@@ -226,15 +230,21 @@ const ProjectCompleteButton = ({project, projectProgress, onMarkComplete, markin
   const totalTasks = info?.total ?? 0;
   const completedTasks = info?.completed ?? 0;
   const hasIncompleteTasks = totalTasks > 0 && completedTasks < totalTasks;
+  const hasNoTasks = totalTasks === 0;
   const normalizedStatus = (project.status ?? '').toString().toLowerCase();
   const isAlreadyCompleted = normalizedStatus === 'completed';
   const isMarking = markingProjectId === project.projectId;
-  const disabled = hasIncompleteTasks || isAlreadyCompleted || isMarking;
-  const title = hasIncompleteTasks
-    ? 'Complete all project tasks before marking as completed.'
-    : isAlreadyCompleted
-      ? 'This project is already completed.'
+  const canComplete = !hasIncompleteTasks && !isAlreadyCompleted && !hasNoTasks && completedTasks > 0;
+  const disabled = isMarking;
+  const title = hasNoTasks
+    ? 'Add and finish at least one task before completing the project.'
+    : hasIncompleteTasks
+      ? 'Complete all project tasks before marking as completed.'
       : undefined;
+
+  if (!canComplete && !isMarking) {
+    return null;
+  }
 
   return (
     <button

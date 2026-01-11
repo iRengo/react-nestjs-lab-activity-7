@@ -104,9 +104,11 @@ const TasksTable = ({
             const priorityClasses = getPriorityBadgeClasses(task.priority);
             const overdue = isTaskOverdue(task);
             const normalizedStatus = (task.status ?? '').toString().toLowerCase();
-            const isForReview = normalizedStatus === 'for review';
             const isCompleted = normalizedStatus === 'completed';
-            const disableComplete = markingId === task.taskId || isCompleted || !isForReview;
+            const isOngoing = normalizedStatus === 'ongoing';
+            const isForReviewStatus = normalizedStatus === 'for review';
+            const disableComplete = markingId === task.taskId || isCompleted || !isForReviewStatus;
+            const canComplete = isForReviewStatus && !isCompleted;
 
             return (
               <tr key={task.taskId} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
@@ -130,12 +132,12 @@ const TasksTable = ({
                 <td className={`px-6 py-4 ${overdue ? 'text-red-600 dark:text-red-300 font-semibold' : ''}`}>{formatDate(task.dueDate)}</td>
                 <td className="px-6 py-4">
                   <div className="flex justify-end gap-2">
-                    {onMarkComplete ? (
+                    {onMarkComplete && canComplete ? (
                       <button
                         type="button"
                         disabled={disableComplete}
                         onClick={() => onMarkComplete(task)}
-                        title={!isForReview && !isCompleted ? 'Only tasks in "For Review" can be marked as completed.' : undefined}
+                        title={!isForReviewStatus && !isCompleted ? 'Only tasks in "For Review" can be marked as completed.' : undefined}
                         className="rounded-md border border-emerald-200 bg-white px-3 py-1 text-xs font-medium text-emerald-700 shadow-sm transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-700 dark:bg-transparent dark:text-emerald-200 dark:hover:bg-emerald-900/30"
                       >
                         {markingId === task.taskId ? 'Marking...' : 'Mark Completed'}
@@ -144,7 +146,17 @@ const TasksTable = ({
                     <button
                       type="button"
                       onClick={() => onEditTask(task)}
-                      className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:text-slate-200 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
+                      disabled={isCompleted || isOngoing || isForReviewStatus}
+                      title={
+                        isCompleted
+                          ? 'Completed tasks are locked from edits.'
+                          : isOngoing
+                            ? 'Ongoing tasks cannot be edited by admins.'
+                            : isForReviewStatus
+                              ? 'For Review tasks cannot be edited by admins.'
+                              : undefined
+                      }
+                      className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:border-indigo-400 dark:hover:text-indigo-200"
                     >
                       Edit
                     </button>

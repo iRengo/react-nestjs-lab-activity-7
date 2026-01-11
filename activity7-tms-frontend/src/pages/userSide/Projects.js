@@ -1,8 +1,8 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import useAssignedWork from '../../hooks/useAssignedWork';
-import {getDateOrNull, isTaskCompleted} from './utils/taskMetrics';
-import {formatStatusLabel, getStatusBadgeClasses} from '../../utils/badgeStyles';
+import { getDateOrNull, isTaskCompleted } from './utils/taskMetrics';
+import { formatStatusLabel, getStatusBadgeClasses } from '../../utils/badgeStyles';
 
 const isProjectOverdue = (project) => {
   const status = (project.status ?? '').toString().toLowerCase();
@@ -29,7 +29,7 @@ const isProjectOverdue = (project) => {
 const ROWS_PER_PAGE = 5;
 
 const Projects = () => {
-  const {projects: assignedProjects, tasks: assignedTasks, isLoading, error, reload} = useAssignedWork();
+  const { projects: assignedProjects, tasks: assignedTasks, isLoading, error, reload } = useAssignedWork();
   const [projectPage, setProjectPage] = useState(1);
   const projectCount = assignedProjects.length;
 
@@ -43,9 +43,11 @@ const Projects = () => {
       const completedAssigned = tasksForProject.filter((task) => isTaskCompleted(task.status)).length;
       const progress = totalAssigned === 0 ? 0 : Math.round((completedAssigned / totalAssigned) * 100);
       const dueSoonest = tasksForProject
-        .map((task) => getDateOrNull(task.dueDate))
-        .filter((date) => date && date >= startOfToday)
-        .sort((a, b) => (a?.getTime() ?? 0) - (b?.getTime() ?? 0))[0];
+        .filter(task => task.status !== 'completed')
+        .map(task => getDateOrNull(task.dueDate))
+        .filter(date => date && date >= startOfToday)
+        .sort((a, b) => a.getTime() - b.getTime())[0];
+
 
       return {
         project,
@@ -122,36 +124,36 @@ const Projects = () => {
                 </td>
               </tr>
             ) : (
-              paginatedRows.map(({project, progress, totalAssigned, completedAssigned, dueSoonest}) => {
+              paginatedRows.map(({ project, progress, totalAssigned, completedAssigned, dueSoonest }) => {
                 const overdue = isProjectOverdue(project);
 
                 return (
-                <tr key={project.projectId} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                    <div className={overdue ? 'text-red-600 dark:text-red-300' : undefined}>{project.projectName ?? 'Untitled project'}</div>
-                    <span className={`mt-1 inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[11px] font-semibold capitalize ${getStatusBadgeClasses(project.status)}`}>
-                      {formatStatusLabel(project.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Assignee</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                      <span>{progress}% complete</span>
-                      <span>{totalAssigned > 0 ? `${completedAssigned}/${totalAssigned} tasks` : 'No tasks assigned'}</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                      <div
-                        className="h-full rounded-full bg-indigo-500 transition-all dark:bg-indigo-400"
-                        style={{width: `${progress}%`}}
-                      />
-                    </div>
-                    <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                      {dueSoonest
-                        ? `Next due: ${dueSoonest.toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}`
-                        : 'No upcoming deadlines'}
-                    </div>
-                  </td>
-                </tr>
+                  <tr key={project.projectId} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                      <div className={overdue ? 'text-red-600 dark:text-red-300' : undefined}>{project.projectName ?? 'Untitled project'}</div>
+                      <span className={`mt-1 inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[11px] font-semibold capitalize ${getStatusBadgeClasses(project.status)}`}>
+                        {formatStatusLabel(project.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Assignee</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                        <span>{progress}% complete</span>
+                        <span>{totalAssigned > 0 ? `${completedAssigned}/${totalAssigned} tasks` : 'No tasks assigned'}</span>
+                      </div>
+                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-indigo-500 transition-all dark:bg-indigo-400"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        {dueSoonest
+                          ? `Next due: ${dueSoonest.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+                          : 'No upcoming deadlines'}
+                      </div>
+                    </td>
+                  </tr>
                 );
               })
             )}

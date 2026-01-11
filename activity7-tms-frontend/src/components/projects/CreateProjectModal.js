@@ -12,6 +12,18 @@ const CreateProjectModal = ({
 }) => {
   const [errors, setErrors] = useState({});
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const toDateInput = (date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const startDateMin = toDateInput(today);
+  const endDateMin = toDateInput(today);
+
   if (!isOpen) return null;
 
   const validateForm = () => {
@@ -36,12 +48,22 @@ const CreateProjectModal = ({
       newErrors.endDate = 'This field is required';
     }
 
-    if (
-      formState.startDate &&
-      formState.endDate &&
-      new Date(formState.endDate) < new Date(formState.startDate)
-    ) {
-      newErrors.endDate = 'End date cannot be before start date';
+    const startDateObj = formState.startDate ? new Date(formState.startDate) : null;
+    const endDateObj = formState.endDate ? new Date(formState.endDate) : null;
+
+    if (startDateObj && startDateObj < today) {
+      newErrors.startDate = 'Start date cannot be in the past';
+    }
+
+    if (startDateObj && endDateObj) {
+      if (endDateObj < startDateObj) {
+        newErrors.endDate = 'End date cannot be before start date';
+      } else {
+        const dayDiff = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
+        if (dayDiff < 3) {
+          newErrors.endDate = 'End date must be at least 3 days after start date';
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -128,6 +150,7 @@ const CreateProjectModal = ({
                 name="startDate"
                 value={formState.startDate}
                 onChange={onChange}
+                min={startDateMin}
                 className={`${inputBase} ${errors.startDate ? inputError : inputNormal
                   }`}
               />
@@ -145,6 +168,7 @@ const CreateProjectModal = ({
                 name="endDate"
                 value={formState.endDate}
                 onChange={onChange}
+                min={endDateMin}
                 className={`${inputBase} ${errors.endDate ? inputError : inputNormal
                   }`}
               />

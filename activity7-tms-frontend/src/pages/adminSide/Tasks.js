@@ -165,6 +165,23 @@ const Tasks = () => {
 	};
 
 	const openEditModal = (task) => {
+		const normalizedStatus = (task?.status ?? '').toString().toLowerCase();
+
+		if (normalizedStatus === 'completed') {
+			setErrorMessage('Completed tasks cannot be edited.');
+			return;
+		}
+
+		if (normalizedStatus === 'ongoing') {
+			setErrorMessage('Ongoing tasks cannot be edited by admins.');
+			return;
+		}
+
+		if (normalizedStatus === 'for review') {
+			setErrorMessage('For Review tasks cannot be edited by admins.');
+			return;
+		}
+
 		setTaskForm({
 			taskTitle: task.taskTitle ?? '',
 			taskDescription: task.taskDescription ?? '',

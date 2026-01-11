@@ -23,6 +23,10 @@ const mapStatusToOption = (status) => {
     return 'completed';
   }
 
+  if (['pending', 'not started', 'todo'].includes(normalized)) {
+    return 'pending';
+  }
+
   if (['for review', 'review', 'in review'].includes(normalized)) {
     return 'for review';
   }
