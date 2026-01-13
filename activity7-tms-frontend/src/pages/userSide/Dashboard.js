@@ -70,120 +70,184 @@ const Dashboard = () => {
       .slice(0, 3);
   }, [assignedTasks]);
 
-  return (
-    <section className="space-y-6">
-      <PageHeader
-        title="My Dashboard"
-        subtitle="Track your work, deadlines, and recent activity."
-        actions={error ? (
+ return (
+  <section className="space-y-8">
+    <PageHeader
+      title="My Dashboard"
+      subtitle="Track your work, deadlines, and recent activity."
+      actions={
+        error ? (
           <button
             type="button"
             onClick={reload}
-            className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-200 dark:border-rose-500/50 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
+            className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-300 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
           >
             Retry
           </button>
-        ) : null}
-      />
+        ) : null
+      }
+    />
 
-      {error ? (
-        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/40 dark:text-rose-200">
-          {error}
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {summaryCards.map((card) => (
-          <div
-            key={card.label}
-            className={`rounded-xl border p-6 shadow-sm transition-colors ${card.accent} dark:${card.darkAccent}`}
-          >
-            <p className="text-xs uppercase tracking-wide text-slate-700 dark:text-slate-200">{card.label}</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">{card.value}</p>
-          </div>
-        ))}
+    {error && (
+      <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-900/40 dark:text-rose-200">
+        {error}
       </div>
+    )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Assigned Tasks</h3>
-            <span className="text-xs text-slate-400 dark:text-slate-500">{isLoading ? 'Loading…' : `${recentActivity.length} updates`}</span>
-          </div>
-          {recentActivity.length === 0 && !isLoading ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">No recent updates yet.</p>
-          ) : (
-            <ul className="max-h-64 space-y-2 overflow-y-auto pr-1 text-sm text-slate-600 dark:text-slate-300">
-              {recentActivity.map((task) => {
-                const projectName = task.project?.projectName ?? 'Unnamed project';
-                const statusLabel = formatStatusLabel(task.status);
-                const statusClasses = getStatusBadgeClasses(task.status);
+    {/* Summary cards */}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {summaryCards.map((card) => (
+        <div
+          key={card.label}
+          className={`group relative overflow-hidden rounded-xl border p-6 shadow-sm transition hover:shadow-md ${card.accent} dark:${card.darkAccent}`}
+        >
+          <p className="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300">
+            {card.label}
+          </p>
+          <p className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">
+            {card.value}
+          </p>
+          <span className="absolute inset-x-0 bottom-0 h-0.5 bg-current opacity-10 group-hover:opacity-30" />
+        </div>
+      ))}
+    </div>
 
-                return (
-                  <li key={task.taskId} className="space-y-1 leading-snug">
-                    <div className="flex flex-col">
-                      <span className="truncate font-medium text-slate-900 dark:text-white">{task.taskTitle}</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{projectName}</span>
+    {/* Activity + Deadlines */}
+    <div className="grid gap-6 lg:grid-cols-2">
+      {/* Recent tasks */}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            Recent Assigned Tasks
+          </h3>
+          <span className="text-xs text-slate-400">
+            {isLoading ? 'Loading…' : `${recentActivity.length} updates`}
+          </span>
+        </div>
+
+        {recentActivity.length === 0 && !isLoading ? (
+          <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            No recent updates yet
+          </p>
+        ) : (
+          <ul className="max-h-72 space-y-3 overflow-y-auto pr-1">
+            {recentActivity.map((task) => {
+              const projectName = task.project?.projectName ?? 'Unnamed project';
+              const statusLabel = formatStatusLabel(task.status);
+              const statusClasses = getStatusBadgeClasses(task.status);
+
+              return (
+                <li
+                  key={task.taskId}
+                  className="rounded-lg border border-slate-200 p-3 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/60"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-slate-900 dark:text-white">
+                        {task.taskTitle}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {projectName}
+                      </p>
                     </div>
-                    <span className={`inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[11px] font-semibold capitalize ${statusClasses}`}>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${statusClasses}`}
+                    >
                       {statusLabel}
                     </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {/* Upcoming deadlines */}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            Upcoming Deadlines
+          </h3>
+          <span className="text-xs text-slate-400">
+            {isLoading ? 'Loading…' : `${upcomingDeadlines.length} tasks`}
+          </span>
         </div>
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Upcoming Deadlines</h3>
-            <span className="text-xs text-slate-400 dark:text-slate-500">{isLoading ? 'Loading…' : `${upcomingDeadlines.length} tasks`}</span>
-          </div>
-          {upcomingDeadlines.length === 0 && !isLoading ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">No upcoming deadlines.</p>
-          ) : (
-            <ul className="max-h-64 space-y-2 overflow-y-auto pr-1 text-sm text-slate-600 dark:text-slate-300">
-              {upcomingDeadlines.map((task) => {
-                const dueDate = getDateOrNull(task.dueDate);
-                const formattedDue = dueDate
-                  ? dueDate.toLocaleDateString(undefined, {
+
+        {upcomingDeadlines.length === 0 && !isLoading ? (
+          <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            No upcoming deadlines
+          </p>
+        ) : (
+          <ul className="max-h-72 space-y-3 overflow-y-auto pr-1">
+            {upcomingDeadlines.map((task) => {
+              const dueDate = getDateOrNull(task.dueDate);
+              const formattedDue = dueDate
+                ? dueDate.toLocaleDateString(undefined, {
                     month: 'short',
                     day: 'numeric',
                   })
-                  : 'No due date';
-                return (
-                  <li key={task.taskId} className="leading-snug">
-                    <span className="truncate font-medium text-slate-900 dark:text-white">{task.taskTitle}</span>
-                    <div className="text-xs text-slate-400 dark:text-slate-500">Due {formattedDue}</div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </div>
+                : 'No due date';
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Assigned Projects</h3>
-        {isLoading ? (
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading projects…</p>
-        ) : assignedProjects.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No projects assigned yet.</p>
-        ) : (
-          <ul className="mt-4 grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2 lg:grid-cols-3">
-            {assignedProjects.map((project) => (
-              <li key={project.projectId} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/70">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{project.projectName ?? 'Untitled project'}</p>
-                <span className={`mt-2 inline-flex min-w-[6rem] justify-center rounded-full px-2 py-1 text-[11px] font-semibold capitalize ${getStatusBadgeClasses(project.status)}`}>
-                  {formatStatusLabel(project.status)}
-                </span>
-              </li>
-              ))}
-            </ul>
+              return (
+                <li
+                  key={task.taskId}
+                  className="rounded-lg border border-slate-200 p-3 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/60"
+                >
+                  <p className="truncate font-medium text-slate-900 dark:text-white">
+                    {task.taskTitle}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Due {formattedDue}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
-    </section>
-  );
+    </div>
+
+    {/* Assigned projects */}
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
+        Assigned Projects
+      </h3>
+
+      {isLoading ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Loading projects…
+        </p>
+      ) : assignedProjects.length === 0 ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          No projects assigned yet
+        </p>
+      ) : (
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {assignedProjects.map((project) => (
+            <li
+              key={project.projectId}
+              className="rounded-xl border border-slate-200 p-4 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md dark:border-slate-700 dark:hover:bg-slate-800/60"
+            >
+              <p className="truncate font-semibold text-slate-900 dark:text-white">
+                {project.projectName ?? 'Untitled project'}
+              </p>
+              <span
+                className={`mt-3 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold capitalize ${getStatusBadgeClasses(
+                  project.status,
+                )}`}
+              >
+                {formatStatusLabel(project.status)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </section>
+);
+
+
 };
 
 export default Dashboard;
